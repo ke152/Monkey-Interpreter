@@ -13,7 +13,8 @@
 	//读取字符
 	public void ReadChar()
 	{
-		if (this.ReadPosition >= Input.Length) { //到达input末尾
+		if (this.ReadPosition >= Input.Length)
+		{ //到达input末尾
 			this.Ch = (char)0; //文件末尾
 		}
 		else
@@ -23,6 +24,19 @@
 		this.Position++;
 	}
 
+	//窥探字符
+	public char PeekChar()
+	{
+		if (this.ReadPosition >= this.Input.Length)
+		{
+			return (char)0;
+		}
+		else
+		{
+			return this.Input[this.ReadPosition];
+		}
+	}
+
 	public Token NextToken()
 	{
 		Token? tok;
@@ -30,7 +44,16 @@
 		switch (this.Ch)
 		{
 			case '=':
-				tok = new  Token(TokenType.ASSIGN, this.Ch);
+				if (PeekChar() == '=') {
+					var ch = Ch;
+					ReadChar();
+					var literal = ch.ToString() + Ch.ToString();
+					tok = new Token ( TokenType.EQ, literal);
+				}
+				else
+				{
+					tok = new Token(TokenType.ASSIGN, this.Ch);
+				}
 				break;
 			case '+':
 				tok = new  Token(TokenType.PLUS, this.Ch);
@@ -38,8 +61,20 @@
 			case '-':
 				tok = new  Token(TokenType.MINUS, this.Ch);
 				break;
+			case '!':
+				if (PeekChar() == '=') {
+					var ch = Ch;
+					ReadChar();
+					var literal = ch.ToString() + Ch.ToString();
+					tok = new Token(TokenType.NOT_EQ, literal);
+				}
+				else
+				{
+					tok = new Token(TokenType.BANG, this.Ch);
+				}
+				break;
 			case '/':
-				tok = new  Token(TokenType.SLASH, this.Ch);
+				tok = new Token(TokenType.SLASH, this.Ch);
 				break;
 			case '*':
 				tok = new  Token(TokenType.ASTERISK, this.Ch);

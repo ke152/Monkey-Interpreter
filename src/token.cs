@@ -3,7 +3,12 @@
     public static readonly Dictionary<string, TokenType> KeyWords = new()
     {
         { "fn", TokenType.FUNCTION },
-        { "let", TokenType.LET }
+        { "let", TokenType.LET },
+        { "true", TokenType.TRUE },
+        { "false", TokenType.FALSE },
+        { "if", TokenType.IF },
+        { "else", TokenType.ELSE },
+        { "return", TokenType.RETURN },
     };
 
     public TokenType Type;
@@ -25,6 +30,17 @@
         Type = type;
         Literal = ch;
     }
+
+    public void Print()
+    {
+        if (Type == TokenType.ILLEGAL)
+            Console.ForegroundColor = ConsoleColor.Red;
+
+        System.Console.WriteLine($"Token is   {Type},  Value is  {Literal}");
+
+        if (Type == TokenType.ILLEGAL)
+            Console.ResetColor();
+    }
 }
 
 enum TokenType
@@ -39,8 +55,9 @@ enum TokenType
     PLUS,
     MINUS,
     // 分隔符
-    SLASH,// \
-    ASTERISK,
+    SLASH,//   /
+    BANG, // !
+    ASTERISK,// *
 
     COMMA,//逗号
     SEMICOLON,//分号
@@ -48,12 +65,19 @@ enum TokenType
     RPAREN,//右小括号
     LBRACE,//左花括号
     RBRACE,//右花括号
-    // 关键字
-    FUNCTION,
-    LET,
-    LT,
-    GT,
+    LT, // <
+    GT,// >
     COLON,
     LBRACKET,
     RBRACKET,
+    EQ, // ==
+    NOT_EQ, // !=
+    // 关键字
+    FUNCTION, // 
+    LET, // let
+    TRUE,
+    FALSE,
+    IF,
+    ELSE,
+    RETURN,
 }
