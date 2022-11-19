@@ -24,4 +24,19 @@ while (m.ReadPosition <= x.Length)
     tok.Print();
     tokens.Add(tok);
 }
-Console.ReadKey();
+
+Console.WriteLine($"Hello, {System.Environment.UserName}. This is Monkey programming language.");
+Console.WriteLine($"Feel free to type in commands:");
+
+while (true)
+{
+    Console.Write(">>");
+    string? line = Console.ReadLine();
+    if (line == null) continue;
+
+    var l = new Lexer(line);
+    for (var tok = l.NextToken(); tok.Type != TokenType.EOF; tok = l.NextToken())
+    {
+        tok.Print();
+    }
+}
