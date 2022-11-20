@@ -86,25 +86,27 @@ internal class AtsProgram : INode
 {
     public AtsProgram()
     {
-        Statement = new List<IStatement>();
+        Statements = new List<IStatement>();
     }
-    public List<IStatement> Statement { get; set; }
+    public List<IStatement> Statements { get; set; }
 
     public string OutLine()
     {
         string str = string.Empty;
-        foreach (var item in Statement)
+        foreach (var item in Statements)
         {
-            str += item.OutLine();
+            str += item.OutLine() + '\n';
         }
         return str;
     }
 
+    public void PrintStaments() => Console.WriteLine(OutLine());
+
     public string TokenLiteral()
     {
-        if (Statement.Count > 0)
+        if (Statements.Count > 0)
         {
-            return Statement[0].TokenLiteral();
+            return Statements[0].TokenLiteral();
         }
         return "";
     }

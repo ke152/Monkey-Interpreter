@@ -26,30 +26,11 @@
 			var stmt = ParseStatement();
 			if (stmt != null)
 			{
-				program.Statement.Add(stmt);
+				program.Statements.Add(stmt);
 			}
 			NextToken();
 		}
 		return program;
-	}
-
-	public IStatement? ParseStatement()
-	{
-		IStatement? statement = null;
-		switch (CurToken.Type)
-		{
-			case TokenType.LET:
-				statement = ParseLetStatement();
-				break;
-            case TokenType.RETURN:
-                statement = ParserRuturnStatement();
-                break;
-            default:
-				return null;
-                //statement = ParseExpressionStatement();
-                //break;
-        }
-		return statement;
 	}
 
 	public bool PeekTokenIs(TokenType token)
@@ -82,8 +63,28 @@
 		Errors.Add(error);
 	}
 
-    #region Parse Statement
-    public LetStatement? ParseLetStatement()
+	#region Parse Statement
+
+	public IStatement? ParseStatement()
+	{
+		IStatement? statement = null;
+		switch (CurToken.Type)
+		{
+			case TokenType.LET:
+				statement = ParseLetStatement();
+				break;
+			case TokenType.RETURN:
+				statement = ParserRuturnStatement();
+				break;
+			default:
+				return null;
+				//statement = ParseExpressionStatement();
+				//break;
+		}
+		return statement;
+	}
+
+	public LetStatement? ParseLetStatement()
 	{
 		var stmt = new LetStatement() { Token = CurToken };
 		if (!ExpectPeek(TokenType.IDENT))
