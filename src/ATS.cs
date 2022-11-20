@@ -58,8 +58,28 @@ class LetStatement : IStatement
 
         return Token.Literal;
     }
+}
 
-    
+class ReturnStatement : IStatement
+{
+    public Token Token = new();
+    public IExpression? Value { get; set; }
+
+    public string OutLine()
+    {
+        string str = $"{TokenLiteral()}  ={Value?.OutLine()};";
+        return str;
+    }
+
+    public void StatementNode()
+    {
+        throw new NotImplementedException();
+    }
+
+    public string TokenLiteral()
+    {
+        return Token.Literal;
+    }
 }
 
 internal class AtsProgram : INode

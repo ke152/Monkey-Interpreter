@@ -23,7 +23,7 @@
 
 		while (!CurTokenIs(TokenType.EOF))
 		{
-			var stmt = ParserStatement();
+			var stmt = ParseStatement();
 			if (stmt != null)
 			{
 				program.Statement.Add(stmt);
@@ -33,51 +33,23 @@
 		return program;
 	}
 
-	public IStatement? ParserStatement()
+	public IStatement? ParseStatement()
 	{
 		IStatement? statement = null;
 		switch (CurToken.Type)
 		{
 			case TokenType.LET:
-				statement = ParserLetStatement();
+				statement = ParseLetStatement();
 				break;
-			case TokenType.RETURN:
-				statement = ParserRuturnStatement();
-				break;
-			default:
-				statement = ParseExpressionStatement();
-				break;
-		}
-		return statement;
-	}
-
-	public LetStatement? ParserLetStatement()
-	{
-		var stmt = new LetStatement() { Token = CurToken };
-		if (!ExpectPeek(TokenType.IDENT))
-		{
-			//CurError(stmt);
-			//PeekError(TokenEnum.IDENT);
-			return null;
-		}
-		stmt.Name = new Identifier() { Token = CurToken, Value = CurToken.Literal };
-		if (!ExpectPeek(TokenType.ASSIGN))
-		{
-			//CurError(stmt);
-			//PeekError(TokenEnum.ASSIGN);
-			return null;
-		}
-		//NextToken();
-        //stmt.Value = ParserExpression();
-        //if (PeekTokenIs(TokenEnum.SEMICOLON))
-        //{
-        //	NextToken();
-        //}
-        while (!CurTokenIs(TokenType.SEMICOLON))
-        {
-            NextToken();
+            case TokenType.RETURN:
+                statement = ParserRuturnStatement();
+                break;
+            default:
+				return null;
+                //statement = ParseExpressionStatement();
+                //break;
         }
-        return stmt;
+		return statement;
 	}
 
 	public bool PeekTokenIs(TokenType token)
@@ -110,16 +82,49 @@
 		Errors.Add(error);
 	}
 
-	public bool ExpectPeek(TokenType token)
+    #region Parse Statement
+    public LetStatement? ParseLetStatement()
 	{
-		if (PeekTokenIs(token))
+		var stmt = new LetStatement() { Token = CurToken };
+		if (!ExpectPeek(TokenType.IDENT))
+		{
+			//CurError(stmt);
+			//PeekError(TokenEnum.IDENT);
+			return null;
+		}
+		stmt.Name = new Identifier() { Token = CurToken, Value = CurToken.Literal };
+		if (!ExpectPeek(TokenType.ASSIGN))
+		{
+			//CurError(stmt);
+			//PeekError(TokenEnum.ASSIGN);
+			return null;
+		}
+		//NextToken();
+		//stmt.Value = ParserExpression();
+		//if (PeekTokenIs(TokenEnum.SEMICOLON))
+		//{
+		//	NextToken();
+		//}
+		while (!CurTokenIs(TokenType.SEMICOLON))
 		{
 			NextToken();
-			return true;
 		}
-		else
-		{
-			return false;
-		}
+		return stmt;
 	}
+	public ReturnStatement ParserRuturnStatement()
+	{
+		var stmt = new ReturnStatement() { Token = CurToken };
+		NextToken();
+		//stmt.Value = ParseExpression();
+		//if (PeekTokenIs(TokenEnum.SEMICOLON))
+		//{
+		//	NextToken();
+		//}
+        while (!CurTokenIs(TokenType.SEMICOLON))
+        {
+            NextToken();
+        }
+        return stmt;
+	}
+	#endregion
 }
