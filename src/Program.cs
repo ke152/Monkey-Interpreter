@@ -46,6 +46,20 @@ void TestParser()
     string x = @"
     let five = 5; 
     return true;
+
+    5 + 5 * 10;
+
+    !foo;
+    5 + -10;
+
+    5 + 5;
+    5 - 5;
+    5 * 5;
+    5 / 5;
+    5 > 5;
+    5 < 5;
+    5 == 5;
+    5 != 5;
     ";
 
     var l = new Lexer(x);
