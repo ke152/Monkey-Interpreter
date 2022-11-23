@@ -6,7 +6,7 @@
 
 interface IStatement : INode
 {
-    void StatementNode();
+
 }
 
 interface IExpression : INode
@@ -36,7 +36,7 @@ class LetStatement : IStatement
 {
     public Token Token { get; set; }
     public Identifier Name { get; set; }
-    public IExpression Value { get; set; }
+    public IExpression? Value;
 
     public string String()
     {
@@ -151,6 +151,87 @@ internal class IntegerLiteral : IExpression  {
     }
 }
 
+internal class BooleanExpression : IExpression
+{
+    public Token Token;
+    public bool Value;
+
+    internal BooleanExpression(Token token, bool value)
+    {
+        this.Token = token;
+        this.Value = value;
+    }
+    public void ExpressionNode()
+    {
+        throw new NotImplementedException();
+    }
+
+    public string String()
+    {
+        return Token.Literal;
+    }
+
+    public string TokenLiteral()
+    {
+        return Token.Literal;
+    }
+}
+
+class BlockStatement : IStatement
+{
+    public Token Token;
+
+    public readonly List<IStatement> Statements = new();
+
+    public BlockStatement(Token curToken)
+    {
+        this.Token= curToken;
+    }
+
+    public string String()
+    {
+        var str = string.Empty;
+        str += "{\n";
+        foreach (var item in Statements)
+        {
+            str += "\t" + item?.String();
+        }
+        str += "}\n";
+        return str;
+    }
+
+    public string TokenLiteral()
+    {
+        return Token.Literal;
+    }
+}
+
+class IFExpression : IExpression
+{
+    public Token Token;
+    public IExpression? Condition;
+    public BlockStatement? Consequence;
+    public BlockStatement? Alternative;
+
+    public IFExpression(Token token)
+    {
+        this.Token = token;
+    }
+
+    public string String()
+    {
+        var str = $"if ({Condition?.String()}) {{\n" +
+            $"{Consequence?.String()}\n}} else {{\n" +
+             $"{Alternative?.String()}\n}}\n";
+        return str;
+    }
+
+    public string TokenLiteral()
+    {
+        return Token.Literal;
+    }
+}
+
 class PrefixExpression : IExpression
 {
     public Token Token;
@@ -192,5 +273,76 @@ class InfixExpression : IExpression
         return Token.Literal;
     }
 }
+class FunctionLiteral : IExpression
+{
+    public Token Token;
+    public List<Identifier>? Parameter;
 
+    public BlockStatement? Body;
+
+    public FunctionLiteral(Token token)
+    {
+        this.Token = token;
+    }
+
+    public string String()
+    {
+        string str = string.Empty;
+        string param = string.Empty;
+
+        if (Parameter != null)
+        {
+            foreach (var item in Parameter)
+            {
+                param += item?.String();
+            }
+        }
+
+        str += TokenLiteral();
+        str += $"({string.Join(",", param)})\n{{\n{Body?.String()}\n}}\n";
+        return str;
+
+    }
+    public string TokenLiteral()
+    {
+        return Token.Literal;
+    }
+
+}
+
+class CallExpression : IExpression
+{
+    public Token Token;
+    public IExpression Function;
+    public List<IExpression?>? Arguments;
+
+    public CallExpression(Token token, IExpression func, List<IExpression?>? list)
+    {
+        this.Token = token;
+        this.Function = func;
+        this.Arguments = list;
+    }
+
+    public string String()
+    {
+        string str = string.Empty, param = string.Empty;
+
+        if (Arguments != null)
+        {
+            foreach (var item in Arguments)
+            {
+                param += item?.String();
+            }
+        }
+        
+        str += Function.String();
+        str += $"({string.Join(",", param)})";
+        return str;
+    }
+
+    public string TokenLiteral()
+    {
+        return Token.Literal;
+    }
+}
 

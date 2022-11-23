@@ -41,6 +41,11 @@ internal class Parser
 		RegisterPrefix(TokenType.INT, this.ParseIdentifier);
 		RegisterPrefix(TokenType.BANG, this.ParsePrefixExpression);
 		RegisterPrefix(TokenType.MINUS, this.ParsePrefixExpression);
+		RegisterPrefix(TokenType.TRUE, this.ParseBooleanExpression);
+		RegisterPrefix(TokenType.FALSE, this.ParseBooleanExpression);
+		RegisterPrefix(TokenType.LPAREN, this.ParseGroupedExpression);
+		RegisterPrefix(TokenType.IF, this.ParseIFExpression);
+		RegisterPrefix(TokenType.FUNCTION, this.ParseFunctionLiteral);
 
 		Registerinfix(TokenType.PLUS, ParseInfixExpression);
 		Registerinfix(TokenType.MINUS, ParseInfixExpression);
@@ -50,7 +55,7 @@ internal class Parser
 		Registerinfix(TokenType.NOT_EQ, ParseInfixExpression);
 		Registerinfix(TokenType.LT, ParseInfixExpression);
 		Registerinfix(TokenType.GT, ParseInfixExpression);
-		//Registerinfix(TokenType.FUNCTION, ParseCallExpression);
+		Registerinfix(TokenType.FUNCTION, ParseCallExpression);
 
 		NextToken();
 		NextToken();
@@ -140,20 +145,13 @@ internal class Parser
 
 	public IStatement? ParseStatement()
 	{
-		IStatement? statement = null;
-		switch (CurToken.Type)
-		{
-			case TokenType.LET:
-				statement = ParseLetStatement();
-				break;
-			case TokenType.RETURN:
-				statement = ParserRuturnStatement();
-				break;
-			default:
-				statement = ParseExpressionStatement();
-				break;
-		}
-		return statement;
+        IStatement? statement = CurToken.Type switch
+        {
+            TokenType.LET => ParseLetStatement(),
+            TokenType.RETURN => ParserRuturnStatement(),
+            _ => ParseExpressionStatement(),
+        };
+        return statement;
 	}
 
 	public LetStatement? ParseLetStatement()
@@ -172,32 +170,25 @@ internal class Parser
 			//PeekError(TokenEnum.ASSIGN);
 			return null;
 		}
-		//NextToken();
-		//stmt.Value = ParserExpression();
-		//if (PeekTokenIs(TokenEnum.SEMICOLON))
-		//{
-		//	NextToken();
-		//}
-		while (!CurTokenIs(TokenType.SEMICOLON))
+		NextToken();
+		stmt.Value = ParseExpression();
+		if (PeekTokenIs(TokenType.SEMICOLON))
 		{
 			NextToken();
 		}
+
 		return stmt;
 	}
 	public ReturnStatement ParserRuturnStatement()
 	{
 		var stmt = new ReturnStatement() { Token = CurToken };
 		NextToken();
-		//stmt.Value = ParseExpression();
-		//if (PeekTokenIs(TokenEnum.SEMICOLON))
-		//{
-		//	NextToken();
-		//}
-		while (!CurTokenIs(TokenType.SEMICOLON))
-		{
-			NextToken();
-		}
-		return stmt;
+        stmt.Value = ParseExpression();
+        if (PeekTokenIs(TokenType.SEMICOLON))
+        {
+            NextToken();
+        }
+        return stmt;
 	}
 
 	public ExpressionStatement ParseExpressionStatement()
@@ -213,22 +204,44 @@ internal class Parser
 
 	#endregion
 
-	#region dict of parser function and statement type
+	#region parse expression
 
-	public readonly Dictionary<TokenType, Func<IExpression>> PrefixParseFns = new();
+	public readonly Dictionary<TokenType, Func<IExpression?>> PrefixParseFns = new();
 	public readonly Dictionary<TokenType, Func<IExpression, IExpression>> InfixParseFns = new();
-	public void RegisterPrefix(TokenType token, Func<IExpression> fn)
+
+	public void RegisterPrefix(TokenType token, Func<IExpression?> fn)
 	{
 		PrefixParseFns[token] = fn;
 	}
+
 	public void Registerinfix(TokenType token, Func<IExpression, IExpression> fn)
 	{
 		InfixParseFns[token] = fn;
 	}
 
+	public IExpression ParsePrefixExpression()
+	{
+		var exp = new PrefixExpression(CurToken, CurToken.Literal);
+		NextToken();
+		exp.Right = ParseExpression(Precedence.PREFIX);
+		return exp;
+
+	}
+
+	public IExpression ParseInfixExpression(IExpression expression)
+	{
+		var exp = new InfixExpression() { Token = CurToken, Operator = CurToken.Literal, Left = expression };
+
+		var precedence = CurPrecedence();
+		NextToken();
+		exp.Right = ParseExpression(precedence);
+		return exp;
+
+	}
+
 	IExpression? ParseExpression(int precedence = Precedence.LOWEST)
 	{
-		PrefixParseFns.TryGetValue(CurToken.Type, out Func<IExpression>? prefix);
+		PrefixParseFns.TryGetValue(CurToken.Type, out Func<IExpression?>? prefix);
 		if (prefix == null)
 		{
 			NoPreExpressionError(CurToken.Type);
@@ -239,15 +252,72 @@ internal class Parser
 		var leftExp = prefix();
         while (!PeekTokenIs(TokenType.SEMICOLON) && precedence < PeekPrecedence())
         {
-            var infix = InfixParseFns[PeekToken.Type];
-            if (infix == null)
+            var index = InfixParseFns[PeekToken.Type];
+            if (index == null)
             {
                 return leftExp;
             }
             NextToken();
-            leftExp = infix(leftExp);
+            leftExp = index(leftExp);
         }
         return leftExp;
+	}
+	public IExpression? ParseGroupedExpression()
+	{
+		NextToken();
+		var exp = ParseExpression();
+		if (!ExpectPeek(TokenType.RPAREN))
+		{
+			return null;
+		}
+		return exp;
+	}
+
+	public IExpression? ParseIFExpression()
+	{
+		if (!ExpectPeek(TokenType.LPAREN))
+		{
+			return null;
+		}
+
+		var exp = new IFExpression(CurToken);
+		NextToken();
+		exp.Condition = ParseExpression();
+		if (!ExpectPeek(TokenType.RPAREN))
+		{
+			return null;
+		}
+		if (!ExpectPeek(TokenType.LBRACE))
+		{
+			return null;
+		}
+		exp.Consequence = ParseBlockStatement();
+		if (PeekTokenIs(TokenType.ELSE))
+		{
+			NextToken();
+			if (!ExpectPeek(TokenType.LBRACE))
+			{
+				return null;
+			}
+			exp.Alternative = ParseBlockStatement();
+		}
+		return exp;
+	}
+
+	public BlockStatement ParseBlockStatement()
+	{
+		var block = new BlockStatement(CurToken);
+		NextToken();
+		while (!CurTokenIs(TokenType.RBRACE) && !CurTokenIs(TokenType.EOF))
+		{
+			var stmt = ParseStatement();
+			if (stmt != null)
+			{
+				block.Statements.Add(stmt);
+			}
+			NextToken();
+		}
+		return block;
 	}
 
 	public IExpression ParseIdentifier()
@@ -270,24 +340,78 @@ internal class Parser
 		return lit;
 	}
 
-	public IExpression ParsePrefixExpression()
+	public IExpression ParseBooleanExpression()
 	{
-		var exp = new PrefixExpression(CurToken, CurToken.Literal);
-		NextToken();
-		exp.Right = ParseExpression(Precedence.PREFIX);
+		return new
+			BooleanExpression( CurToken, CurTokenIs(TokenType.TRUE));
+	}
+	public IExpression? ParseFunctionLiteral()
+	{
+		var exp = new FunctionLiteral(CurToken);
+		if (!ExpectPeek(TokenType.LPAREN))
+		{
+			return null;
+		}
+		exp.Parameter = ParseFunctionParameter();
+		if (!ExpectPeek(TokenType.LBRACE))
+		{
+			return null;
+		}
+		exp.Body = ParseBlockStatement();
 		return exp;
-
 	}
 
-	public IExpression ParseInfixExpression(IExpression expression)
+	public List<Identifier>? ParseFunctionParameter()
 	{
-		var exp = new InfixExpression() { Token = CurToken, Operator = CurToken.Literal, Left = expression };
-
-		var precedence = CurPrecedence();
+		var list = new List<Identifier>();
+		if (PeekTokenIs(TokenType.RPAREN))
+		{
+			NextToken();
+			return list;
+		}
 		NextToken();
-		exp.Right = ParseExpression(precedence);
-		return exp;
+		var ident = new Identifier() { Token = CurToken, Value = CurToken.Literal };
+		list.Add(ident);
+		while (PeekTokenIs(TokenType.COMMA))
+		{
+			NextToken();
+			NextToken();
+			ident = new Identifier() { Token = CurToken, Value = CurToken.Literal };
+			list.Add(ident);
+		}
+		if (!ExpectPeek(TokenType.RPAREN))
+		{
+			return null;
+		}
+		return list;
+	}
 
+	public IExpression ParseCallExpression(IExpression func)
+	{
+		return new CallExpression(CurToken, func, ParseCallArguments());
+	}
+
+	public List<IExpression?>? ParseCallArguments()
+	{
+		var list = new List<IExpression?>();
+		if (PeekTokenIs(TokenType.RPAREN))
+		{
+			NextToken();
+			return list;
+		}
+		NextToken();
+		list.Add(ParseExpression());
+		while (PeekTokenIs(TokenType.COMMA))
+		{
+			NextToken();
+			NextToken();
+			list.Add(ParseExpression());
+		}
+		if (!ExpectPeek(TokenType.RPAREN))
+		{
+			return null;
+		}
+		return list;
 	}
 	#endregion
 }

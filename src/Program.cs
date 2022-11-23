@@ -60,6 +60,17 @@ void TestParser()
     5 < 5;
     5 == 5;
     5 != 5;
+
+    bool b; 
+
+    (5 + 5) * 10;
+
+    if (b) { 1+2; } else { 3+4;}
+
+    let add = fn(x, y) {
+      x + y;
+    };
+
     ";
 
     var l = new Lexer(x);
