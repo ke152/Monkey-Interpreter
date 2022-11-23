@@ -1,7 +1,8 @@
 ﻿TestLexer();
 TestParser();
 
-REPL();
+//REPL();
+RPPL();
 
 void TestLexer()
 {
@@ -97,5 +98,37 @@ void REPL()
         {
             tok.Print();
         }
+    }
+}
+
+void RPPL()
+{
+    //    string MONKEY_FACE = """            __,__
+    //   .--.  .- "     " -.  .--.
+    //  / .. \/  .-. .-.  \/ .. \
+    // | | '|  /   Y   \  |' | |
+    // | \   \  \ 0 | 0 /  /   / |
+    //  \ '- ,\.-"""""""-./, -' /
+    //   '' - ' /_   ^ ^   _\ ' - ''
+    //       |  \._ _./  |
+    //       \   \ '~' /   /
+    //        '._ ' -= -' _.'
+    //           '-----'
+    //""";
+    Console.ForegroundColor = ConsoleColor.Red;
+    Console.WriteLine($"Hello, {System.Environment.UserName}. This is Monkey programming language.");
+    Console.WriteLine($"Feel free to type in commands:");
+    Console.ResetColor();
+
+    while (true)
+    {
+        Console.Write(">>");
+        string? line = Console.ReadLine();
+        if (line == null) continue;
+
+        var l = new Lexer(" " + line);
+        var p = new Parser(l);
+        var program = p.ParseProgram();
+        program.PrintStaments();
     }
 }
