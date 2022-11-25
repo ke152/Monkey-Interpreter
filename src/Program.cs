@@ -109,6 +109,7 @@ void REPL()
         var program = p.ParseProgram();
         program.PrintStaments();
 
+        Evaluator eval = new Evaluator();
         IMonkeyObject? obj = Evaluator.Eval(program);
         if (obj != null)
         {

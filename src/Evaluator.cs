@@ -1,29 +1,31 @@
 ﻿internal class Evaluator
 {
-    public static IMonkeyObject? Eval(INode? node)
+    public IMonkeyObject? Eval(INode? node)
     {
         if (node == null) return null;
 
         switch (node)
         {
-            case AtsProgram p:
-                return EvalStatements(p.Statements);
-            case ExpressionStatement e:
-                return Eval(e);
-            case IntegerLiteral l:
-                return new MonkeyInteger(l.Value);
-            case BooleanExpression e:
-                return NativeBoolToBooleanObject(e.Value);
-            case PrefixExpression e:
-                var obj = Eval(e);
-                return EvalPrefixExpression(e.Operator, obj);
-            case InfixExpression e:
-                var left = Eval(e.Left);
-                var right = Eval(e.Right);
-                return EvalInfixExpression(e.Operator, left, right);
-            case BlockStatement blockStatement:
-                var block = EvalStatements(blockStatement.Statements);
+            case AtsProgram n:
+                return EvalProgram(n.Statements);
+            case ExpressionStatement n:
+                return Eval(n);
+            case IntegerLiteral n:
+                return new MonkeyInteger(n.Value);
+            case BooleanExpression n:
+                return NativeBoolToBooleanObject(n.Value);
+            case PrefixExpression n:
+                var obj = Eval(n);
+                return EvalPrefixExpression(n.Operator, obj);
+            case InfixExpression n:
+                var left = Eval(n.Left);
+                var right = Eval(n.Right);
+                return EvalInfixExpression(n.Operator, left, right);
+            case BlockStatement n:
+                var block = EvalBlockStatement(n);
                 return block;
+            case ReturnStatement n:
+                return new MonkeyReturn(Eval(n.Value));
             case IFExpression ifExpression:
                 return EvalIfExpression(ifExpression);
         }
@@ -31,30 +33,45 @@
         return null;
     }
 
-    private static IMonkeyObject NativeBoolToBooleanObject(bool value)
+    private IMonkeyObject NativeBoolToBooleanObject(bool value)
     {
         return new MonkeyBoolean(value);
     }
 
-    public static IMonkeyObject? EvalStatements(List<IStatement> statements)
+    public IMonkeyObject? EvalProgram(List<IStatement> statements)
     {
         IMonkeyObject? obj = null;
         foreach (var stmt in statements)
         {
             obj = Eval(stmt);
-            //switch (obj)
-            //{
-            //    case MonkeyReturn monkeyReturn:
-            //        return monkeyReturn.Value;
-            //    case MonkeyError monkeyError:
-            //        return monkeyError;
-            //}
+            switch (obj)
+            {
+                case MonkeyReturn monkeyReturn:
+                    return monkeyReturn.Value;
+                //case MonkeyError monkeyError:
+                //    return monkeyError;
+            }
 
         }
         return obj;
     }
 
-    public static IMonkeyObject EvalPrefixExpression(string op, IMonkeyObject? right)
+    public IMonkeyObject? EvalBlockStatement(BlockStatement blockStatement)
+    {
+        IMonkeyObject? obj = null;
+        foreach (var stmt in blockStatement.Statements)
+        {
+            obj = Eval(stmt);
+            if (obj != null && obj.GetMonkeyObjectType() == MonkeyObjectType.Return)
+            {
+                return obj;
+            }
+        }
+
+        return obj;
+    }
+  
+    public IMonkeyObject EvalPrefixExpression(string op, IMonkeyObject? right)
     {
         if (right == null) return new MonkeyNull();
 
@@ -69,7 +86,7 @@
         }
     }
 
-    public static IMonkeyObject EvalBangOperatorExpression(IMonkeyObject right)
+    public IMonkeyObject EvalBangOperatorExpression(IMonkeyObject right)
     {
         switch (right)
         {
@@ -82,9 +99,9 @@
         }
     }
 
-    public static IMonkeyObject EvalMinusPrefiOperatorExpression(IMonkeyObject right)
+    public IMonkeyObject EvalMinusPrefiOperatorExpression(IMonkeyObject right)
     {
-        if (right.GetMonkeyObjectType() != MonkeyObjectType.INTEGER)
+        if (right.GetMonkeyObjectType() != MonkeyObjectType.Integer)
         {
             return new MonkeyNull();
         }
@@ -98,14 +115,14 @@
         return new MonkeyInteger(-r.Value);
     }
 
-    public static IMonkeyObject EvalInfixExpression(string op, IMonkeyObject? left, IMonkeyObject? right)
+    public IMonkeyObject EvalInfixExpression(string op, IMonkeyObject? left, IMonkeyObject? right)
     {
         if (left == null || right == null)
         {
             return new MonkeyNull();
         }
 
-        if (left.GetMonkeyObjectType() == MonkeyObjectType.INTEGER && right.GetMonkeyObjectType() == MonkeyObjectType.INTEGER)
+        if (left.GetMonkeyObjectType() == MonkeyObjectType.Integer && right.GetMonkeyObjectType() == MonkeyObjectType.Integer)
         {
             return EvalIntegerInfixExpression(op, left, right);
         }
@@ -121,7 +138,7 @@
         }
     }
 
-    public static IMonkeyObject EvalIntegerInfixExpression(string op, IMonkeyObject left, IMonkeyObject right)
+    public IMonkeyObject EvalIntegerInfixExpression(string op, IMonkeyObject left, IMonkeyObject right)
     {
         var rv = right as MonkeyInteger;
         var lv = left as MonkeyInteger;
@@ -154,7 +171,7 @@
         }
     }
 
-    public static IMonkeyObject? EvalIfExpression(IFExpression expression)
+    public IMonkeyObject? EvalIfExpression(IFExpression expression)
     {
         var condiion = Eval(expression.Condition);
         //if (IsError(condiion))
@@ -175,7 +192,7 @@
         }
     }
 
-    public static bool IsTruthy(IMonkeyObject? val)
+    public bool IsTruthy(IMonkeyObject? val)
     {
         switch (val)
         {

@@ -6,14 +6,15 @@
 
 internal enum MonkeyObjectType
 {
-    INTEGER,
+    Integer,
     Boolean,
     Null,
+    Return,
 }
 
 internal class MonkeyInteger : IMonkeyObject
 {
-    public MonkeyObjectType Type = MonkeyObjectType.INTEGER;
+    public MonkeyObjectType Type = MonkeyObjectType.Integer;
 
     public int Value;
 
@@ -56,5 +57,23 @@ internal class MonkeyNull : IMonkeyObject
     public string Inspect()
     {
         return "null";
+    }
+}
+
+internal class MonkeyReturn : IMonkeyObject
+{
+    public MonkeyObjectType Type = MonkeyObjectType.Return;
+    public MonkeyObjectType GetMonkeyObjectType() => Type;
+
+    public IMonkeyObject? Value;
+
+    public MonkeyReturn(IMonkeyObject? value)
+    {
+        this.Value = value;
+    }
+
+    public string Inspect()
+    {
+        return Value.Inspect();
     }
 }
