@@ -21,6 +21,11 @@
                 var left = Eval(e.Left);
                 var right = Eval(e.Right);
                 return EvalInfixExpression(e.Operator, left, right);
+            case BlockStatement blockStatement:
+                var block = EvalStatements(blockStatement.Statements);
+                return block;
+            case IFExpression ifExpression:
+                return EvalIfExpression(ifExpression);
         }
 
         return null;
@@ -146,6 +151,40 @@
             default:
                 return new MonkeyNull();
 
+        }
+    }
+
+    public static IMonkeyObject? EvalIfExpression(IFExpression expression)
+    {
+        var condiion = Eval(expression.Condition);
+        //if (IsError(condiion))
+        //{
+        //    return condiion;
+        //}
+        if (IsTruthy(condiion))
+        {
+            return Eval(expression.Consequence);
+        }
+        else if (expression.Alternative != null)
+        {
+            return Eval(expression.Alternative);
+        }
+        else
+        {
+            return new MonkeyNull();
+        }
+    }
+
+    public static bool IsTruthy(IMonkeyObject? val)
+    {
+        switch (val)
+        {
+            case MonkeyNull monkeyNull:
+                return false;
+            case MonkeyBoolean monkeyBoolean:
+                return monkeyBoolean.Value;
+            default:
+                return false;//默认不是应该false吗？书上是true
         }
     }
 }
