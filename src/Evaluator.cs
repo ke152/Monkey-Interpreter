@@ -249,7 +249,7 @@
         }
     }
 
-    public MonkeyError NewError(params string[] msg)
+    public static  MonkeyError NewError(params string[] msg)
     {
         return new MonkeyError(string.Join(" ", msg));
     }
@@ -264,12 +264,17 @@
     public IMonkeyObject? EvalIdentifier(Identifier node, MonkeyEnvironment env)
     {
         (IMonkeyObject? obj, bool ok) = env.Get(node.TokenLiteral());
-        if (!ok)
+        if (ok)
         {
-            return NewError("identifier not found: " + node.TokenLiteral());
+            return obj;
         }
 
-        return obj;
+        if (Builtins.builtins.TryGetValue(node.Value ?? string.Empty, out MonkeyBuiltin? builtin))
+        {
+            return builtin;
+        }
+
+        return NewError("identifier not found: " + node.Value);
     }
 
     public List<IMonkeyObject?> EvalExpressions(List<IExpression?>? exps, MonkeyEnvironment environment)
@@ -299,8 +304,8 @@
                 var extendedenv = ExtendFunctionEnv(monkeyFunction, args);
                 var eval = Eval(monkeyFunction.Body, extendedenv);
                 return UnwarpReturnValue(eval);
-            //case MonkeyBuiltin builtin:
-            //    return builtin.Function?.Invoke(args);
+            case MonkeyBuiltin builtin:
+                return builtin.Fn?.Invoke(args);
             default:
                 return NewError($"not a function: {func?.GetMonkeyObjectType()}");
         }

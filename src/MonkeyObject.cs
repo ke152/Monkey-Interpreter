@@ -13,6 +13,7 @@ internal enum MonkeyObjectType
     Error,
     Function,
     String,
+    Builtin,
 }
 
 internal class MonkeyInteger : IMonkeyObject
@@ -184,5 +185,26 @@ internal class MonkeyString : IMonkeyObject
     public string Inspect()
     {
         return Value;
+    }
+}
+
+
+class MonkeyBuiltin : IMonkeyObject
+{
+    public MonkeyObjectType Type = MonkeyObjectType.Builtin;
+    public MonkeyObjectType GetMonkeyObjectType() => Type;
+
+    public delegate IMonkeyObject BuiltinFunction(List<IMonkeyObject?>? args);
+
+    public BuiltinFunction? Fn;
+
+    public MonkeyBuiltin(BuiltinFunction? fn)
+    {
+        Fn = fn;
+    }
+
+    public string Inspect()
+    {
+        return "builtin function";
     }
 }
