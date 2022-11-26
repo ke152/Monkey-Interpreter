@@ -19,8 +19,9 @@ internal class Precedence
 			{ TokenType.MINUS, Precedence.SUM },
 			{ TokenType.SLASH, Precedence.PRODUCT },
 			{ TokenType.ASTERISK, Precedence.PRODUCT },
-			{TokenType.FUNCTION, Precedence.CALL }
-		};
+		{ TokenType.FUNCTION, Precedence.CALL },
+			{ TokenType.LPAREN, Precedence.CALL },
+	};
 }
 #endregion
 
@@ -38,7 +39,7 @@ internal class Parser
 		this.Lexer = l;
 
 		RegisterPrefix(TokenType.IDENT, this.ParseIdentifier);
-		RegisterPrefix(TokenType.INT, this.ParseIdentifier);
+		RegisterPrefix(TokenType.INT, this.ParseIntegerLiteral);
 		RegisterPrefix(TokenType.BANG, this.ParsePrefixExpression);
 		RegisterPrefix(TokenType.MINUS, this.ParsePrefixExpression);
 		RegisterPrefix(TokenType.TRUE, this.ParseBooleanExpression);
@@ -55,7 +56,7 @@ internal class Parser
 		Registerinfix(TokenType.NOT_EQ, ParseInfixExpression);
 		Registerinfix(TokenType.LT, ParseInfixExpression);
 		Registerinfix(TokenType.GT, ParseInfixExpression);
-		Registerinfix(TokenType.FUNCTION, ParseCallExpression);
+		Registerinfix(TokenType.LPAREN, ParseCallExpression);
 
 		NextToken();
 		NextToken();

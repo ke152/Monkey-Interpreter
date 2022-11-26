@@ -13,7 +13,7 @@
                 var block = EvalBlockStatement(n, env);
                 return block;
             case ExpressionStatement n:
-                return Eval(n, env);
+                return Eval(n.Expression, env);
             case ReturnStatement n:
                 var ret = Eval(n.Value, env);
                 if (IsError(ret)) return ret;
@@ -43,6 +43,18 @@
                 return EvalIfExpression(n, env);
             case Identifier n:
                 return EvalIdentifier(n, env);
+            case FunctionLiteral n:
+                var param = n.Parameter;
+                var body = n.Body;
+                return new MonkeyFunction() { Body = body, Parameter = param, Env = env };
+            case CallExpression callExpression:
+                var func = Eval(callExpression.Function, env);
+                if (IsError(func))
+                    return func;
+                var args = EvalExpressions(callExpression.Arguments, env);
+                if (args.Count == 1 && IsError(args[0]))
+                    return args[0];
+                return ApplyFunction(func, args);
 
         }
 
@@ -252,5 +264,61 @@
 
         return obj;
     }
-    
+
+    public List<IMonkeyObject?> EvalExpressions(List<IExpression?>? exps, MonkeyEnvironment environment)
+    {
+        var result = new List<IMonkeyObject?>();
+        if (exps != null)
+        {
+            foreach (var e in exps)
+            {
+                var eval = Eval(e, environment);
+                if (IsError(eval))
+                {
+                    return new List<IMonkeyObject?> { eval };
+                }
+                result.Add(eval);
+            }
+        }
+        return result;
+    }
+
+    public IMonkeyObject? ApplyFunction(IMonkeyObject? func, List<IMonkeyObject?>? args)
+    {
+
+        switch (func)
+        {
+            case MonkeyFunction monkeyFunction:
+                var extendedenv = ExtendFunctionEnv(monkeyFunction, args);
+                var eval = Eval(monkeyFunction.Body, extendedenv);
+                return UnwarpReturnValue(eval);
+            //case MonkeyBuiltin builtin:
+            //    return builtin.Function?.Invoke(args);
+            default:
+                return NewError($"not a function: {func?.GetMonkeyObjectType()}");
+        }
+    }
+
+    public MonkeyEnvironment ExtendFunctionEnv(MonkeyFunction monkeyFunction, List<IMonkeyObject?>? args)
+    {
+        var env = MonkeyEnvironment.NewEnclosedEnvironment(monkeyFunction.Env);
+        if (monkeyFunction.Parameter != null)
+        {
+            for (int i = 0; i < monkeyFunction.Parameter.Count; i++)
+            {
+                if (args != null && args.Count > i && args[i] != null)
+                    env.Set(monkeyFunction.Parameter[i].Value, args[i]);
+            }
+        }
+        return env;
+    }
+
+    public IMonkeyObject? UnwarpReturnValue(IMonkeyObject? obj)
+    {
+        if (obj is MonkeyReturn monkeyReturn)
+        {
+            return monkeyReturn.Value;
+        }
+        return obj;
+    }
 }

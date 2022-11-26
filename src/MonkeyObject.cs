@@ -11,6 +11,7 @@ internal enum MonkeyObjectType
     Null,
     Return,
     Error,
+    Function,
 }
 
 internal class MonkeyInteger : IMonkeyObject
@@ -99,7 +100,7 @@ class MonkeyError : IMonkeyObject
 
 internal class MonkeyEnvironment
 {
-    public Dictionary<string, IMonkeyObject> Store = new();
+    public Dictionary<string, IMonkeyObject?> Store = new();
 
     public MonkeyEnvironment? OuterEnv;
 
@@ -124,7 +125,7 @@ internal class MonkeyEnvironment
         return (obj, false);
     }
 
-    public IMonkeyObject? Set(string? name, IMonkeyObject monkeyobject)
+    public IMonkeyObject? Set(string? name, IMonkeyObject? monkeyobject)
     {
         if (name == null) return null;
         Store[name] = monkeyobject;
@@ -136,10 +137,34 @@ internal class MonkeyEnvironment
         return new MonkeyEnvironment();
     }
 
-    public static MonkeyEnvironment NewEnclosedEnvironment(MonkeyEnvironment monkeyEnvironment)
+    public static MonkeyEnvironment NewEnclosedEnvironment(MonkeyEnvironment? monkeyEnvironment)
     {
         var env = new MonkeyEnvironment();
         env.OuterEnv = monkeyEnvironment;
         return env;
     }
+}
+
+class MonkeyFunction : IMonkeyObject
+{
+    public MonkeyObjectType Type = MonkeyObjectType.Function;
+    public MonkeyObjectType GetMonkeyObjectType() => Type;
+    public List<Identifier>? Parameter;
+    public BlockStatement? Body;
+    public MonkeyEnvironment? Env;
+    public string Inspect()
+    {
+        string str = string.Empty;
+        if (Parameter != null)
+        {
+            foreach (var item in Parameter)
+            {
+                str += item.String();
+            }
+        }
+        str += $"fn\r\n({string.Join(", ", str)}){{\n{Body?.String()}\n}}";
+        return str;
+    }
+
+
 }
