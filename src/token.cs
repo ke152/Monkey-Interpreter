@@ -72,6 +72,7 @@ enum TokenType
     RBRACKET,
     EQ, // ==
     NOT_EQ, // !=
+    STRING, // "
     // 关键字
     FUNCTION, // 
     LET, // let

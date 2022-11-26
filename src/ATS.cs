@@ -348,3 +348,26 @@ class CallExpression : IExpression
     }
 }
 
+internal class StringLiteral : IExpression
+{
+
+    public Token Token;
+    public string Value;
+
+    internal StringLiteral(Token token, string value)
+    {
+        Token = token;
+        Value = value;
+    }
+
+    public string String()
+    {
+        return this.Token.Literal;
+    }
+
+    public string TokenLiteral()
+    {
+        return this.Token.Literal;
+    }
+}
+

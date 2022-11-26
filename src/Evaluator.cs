@@ -55,6 +55,8 @@
                 if (args.Count == 1 && IsError(args[0]))
                     return args[0];
                 return ApplyFunction(func, args);
+            case StringLiteral n:
+                return new MonkeyString(n.Value);
 
         }
 
@@ -161,6 +163,11 @@
         if (left.GetMonkeyObjectType() == MonkeyObjectType.Integer && right.GetMonkeyObjectType() == MonkeyObjectType.Integer)
         {
             return EvalIntegerInfixExpression(op, left, right);
+        }
+
+        if (left.GetMonkeyObjectType() == MonkeyObjectType.String && right.GetMonkeyObjectType() == MonkeyObjectType.String)
+        {
+            return EvalStringInfixExpression(op, left, right);
         }
 
         switch (op)
@@ -320,5 +327,23 @@
             return monkeyReturn.Value;
         }
         return obj;
+    }
+
+    public IMonkeyObject EvalStringInfixExpression(string op, IMonkeyObject left, IMonkeyObject right)
+    {
+        var rv = right as MonkeyString;
+        var lv = left as MonkeyString;
+
+        if (lv == null || rv == null)
+        {
+            return NewError("MonkeyObject is not MonkeyString:", left.GetMonkeyObjectType().ToString(), right.GetMonkeyObjectType().ToString());
+        }
+
+        if (op != "+")
+        {
+            return NewError("unknown operator:", op);
+        }
+
+        return new MonkeyString(lv.Value + rv.Value);
     }
 }

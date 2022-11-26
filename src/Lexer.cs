@@ -110,7 +110,10 @@
 				tok = new  Token(TokenType.LBRACKET, this.Ch);
 				break;
 			case ']':
-				tok = new  Token(TokenType.RBRACKET, this.Ch);
+				tok = new Token(TokenType.RBRACKET, this.Ch);
+				break;
+			case '"':
+				tok = new Token(TokenType.STRING, ReadString());
 				break;
 			case (char)0:
 				tok = new Token(TokenType.EOF, "");
@@ -191,5 +194,23 @@
 	public bool IsDigit(char ch)
 	{
 		return '0' <= ch && ch <= '9';
+	}
+
+	public string ReadString()
+	{
+		int count = 0;
+		var pos = Position + 1;
+		while (true)
+		{
+			ReadChar();
+			count++;
+			if (Input[this.Position] == '"' || Input[this.Position] == char.MinValue)
+			{
+				count--;
+				break;
+			}
+
+		}
+		return Input.Substring(pos, count);
 	}
 }

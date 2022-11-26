@@ -19,7 +19,7 @@ internal class Precedence
 			{ TokenType.MINUS, Precedence.SUM },
 			{ TokenType.SLASH, Precedence.PRODUCT },
 			{ TokenType.ASTERISK, Precedence.PRODUCT },
-		{ TokenType.FUNCTION, Precedence.CALL },
+			{ TokenType.FUNCTION, Precedence.CALL },
 			{ TokenType.LPAREN, Precedence.CALL },
 	};
 }
@@ -47,6 +47,7 @@ internal class Parser
 		RegisterPrefix(TokenType.LPAREN, this.ParseGroupedExpression);
 		RegisterPrefix(TokenType.IF, this.ParseIFExpression);
 		RegisterPrefix(TokenType.FUNCTION, this.ParseFunctionLiteral);
+		RegisterPrefix(TokenType.STRING, this.ParseStringLiteral);
 
 		Registerinfix(TokenType.PLUS, ParseInfixExpression);
 		Registerinfix(TokenType.MINUS, ParseInfixExpression);
@@ -413,6 +414,11 @@ internal class Parser
 			return null;
 		}
 		return list;
+	}
+
+	public IExpression ParseStringLiteral()
+	{
+		return new StringLiteral(CurToken, CurToken.Literal);
 	}
 	#endregion
 }

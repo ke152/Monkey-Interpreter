@@ -12,6 +12,7 @@ internal enum MonkeyObjectType
     Return,
     Error,
     Function,
+    String,
 }
 
 internal class MonkeyInteger : IMonkeyObject
@@ -165,6 +166,23 @@ class MonkeyFunction : IMonkeyObject
         str += $"fn\r\n({string.Join(", ", str)}){{\n{Body?.String()}\n}}";
         return str;
     }
+}
+
+internal class MonkeyString : IMonkeyObject
+{
+    public MonkeyObjectType Type = MonkeyObjectType.String;
+    public MonkeyObjectType GetMonkeyObjectType() => Type;
+
+    public string Value;
+
+    public MonkeyString(string value)
+    {
+        Value = value;
+    }
 
 
+    public string Inspect()
+    {
+        return Value;
+    }
 }
