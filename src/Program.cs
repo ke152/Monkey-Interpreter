@@ -98,6 +98,8 @@ void REPL()
     Console.WriteLine($"Feel free to type in commands:");
     Console.ResetColor();
 
+    Evaluator eval = new();
+    MonkeyEnvironment env = new();
     while (true)
     {
         Console.Write(">>");
@@ -109,8 +111,7 @@ void REPL()
         var program = p.ParseProgram();
         program.PrintStaments();
 
-        Evaluator eval = new Evaluator();
-        IMonkeyObject? obj = Evaluator.Eval(program);
+        IMonkeyObject? obj = eval.Eval(program, env);
         if (obj != null)
         {
             Console.WriteLine($"evaluator result : {obj.Inspect()}");

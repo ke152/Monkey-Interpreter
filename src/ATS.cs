@@ -16,9 +16,9 @@ interface IExpression : INode
 
 class Identifier : IExpression
 {
-    public Token Token { get; set; }
-    public Identifier Name { get; set; }
-    public string Value { get; set; }
+    public Token? Token;
+    public Identifier? Name;
+    public string? Value;
 
     public string String()
     {
@@ -28,19 +28,20 @@ class Identifier : IExpression
 
     public string TokenLiteral()
     {
-        return Token.Literal;
+        var ret = Token?.Literal;
+        return ret ?? string.Empty;
     }
 }
 
 class LetStatement : IStatement
 {
-    public Token Token { get; set; }
-    public Identifier Name { get; set; }
+    public Token? Token;
+    public Identifier? Name;
     public IExpression? Value;
 
     public string String()
     {
-        string str = $"{TokenLiteral()}  {Name.String()} ={Value?.String()};";
+        string str = $"{TokenLiteral()}  {Name?.String()} = {Value?.String()};";
         return str;
     }
 
@@ -51,8 +52,8 @@ class LetStatement : IStatement
 
     public string TokenLiteral()
     {
-
-        return Token.Literal;
+        var ret = Token?.Literal;
+        return ret ?? string.Empty;
     }
 }
 
@@ -126,7 +127,7 @@ internal class AtsProgram : INode
         {
             return Statements[0].TokenLiteral();
         }
-        return "";
+        return string.Empty;
     }
 }
 
@@ -257,20 +258,21 @@ class PrefixExpression : IExpression
 
 class InfixExpression : IExpression
 {
-    public Token Token { get; set; }
-    public string Operator { get; set; }
+    public Token? Token;
+    public string? Operator;
     public IExpression? Right;
     public IExpression? Left;
 
     public string String()
     {
-        var str = $"({Left.String()} {Operator}  {Right?.String()})";
+        var str = $"({Left?.String()} {Operator}  {Right?.String()})";
         return str;
     }
 
     public string TokenLiteral()
     {
-        return Token.Literal;
+        var ret = Token?.Literal;
+        return ret ?? string.Empty;
     }
 }
 class FunctionLiteral : IExpression
@@ -313,10 +315,10 @@ class FunctionLiteral : IExpression
 class CallExpression : IExpression
 {
     public Token Token;
-    public IExpression Function;
+    public IExpression? Function;
     public List<IExpression?>? Arguments;
 
-    public CallExpression(Token token, IExpression func, List<IExpression?>? list)
+    public CallExpression(Token token, IExpression? func, List<IExpression?>? list)
     {
         this.Token = token;
         this.Function = func;
@@ -335,7 +337,7 @@ class CallExpression : IExpression
             }
         }
         
-        str += Function.String();
+        str += Function?.String() ?? string.Empty;
         str += $"({string.Join(",", param)})";
         return str;
     }

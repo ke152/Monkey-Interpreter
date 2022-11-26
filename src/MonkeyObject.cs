@@ -96,3 +96,50 @@ class MonkeyError : IMonkeyObject
         return "error: " + Message;
     }
 }
+
+internal class MonkeyEnvironment
+{
+    public Dictionary<string, IMonkeyObject> Store = new();
+
+    public MonkeyEnvironment? OuterEnv;
+
+    public MonkeyEnvironment()
+    {
+
+    }
+
+    public (IMonkeyObject?, bool) Get(string name)
+    {
+        if (Store.TryGetValue(name, out IMonkeyObject? obj))
+        {
+            return (obj, true);
+        }
+        else
+        {
+            if (OuterEnv != null)
+            {
+                return OuterEnv.Get(name);
+            }
+        }
+        return (obj, false);
+    }
+
+    public IMonkeyObject? Set(string? name, IMonkeyObject monkeyobject)
+    {
+        if (name == null) return null;
+        Store[name] = monkeyobject;
+        return monkeyobject;
+    }
+
+    public static MonkeyEnvironment NewEnvironment()
+    {
+        return new MonkeyEnvironment();
+    }
+
+    public static MonkeyEnvironment NewEnclosedEnvironment(MonkeyEnvironment monkeyEnvironment)
+    {
+        var env = new MonkeyEnvironment();
+        env.OuterEnv = monkeyEnvironment;
+        return env;
+    }
+}

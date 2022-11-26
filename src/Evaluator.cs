@@ -1,36 +1,49 @@
 ﻿internal class Evaluator
 {
-    public IMonkeyObject? Eval(INode? node)
+    public IMonkeyObject? Eval(INode? node, MonkeyEnvironment env)
     {
         if (node == null) return null;
 
         switch (node)
         {
+            // statements
             case AtsProgram n:
-                return EvalProgram(n.Statements);
+                return EvalProgram(n.Statements, env);
+            case BlockStatement n:
+                var block = EvalBlockStatement(n, env);
+                return block;
             case ExpressionStatement n:
-                return Eval(n);
+                return Eval(n, env);
+            case ReturnStatement n:
+                var ret = Eval(n.Value, env);
+                if (IsError(ret)) return ret;
+                return new MonkeyReturn(ret);
+            case LetStatement n:
+                var letRet = Eval(n.Value, env);
+                if (IsError(letRet)) return letRet;
+                if (letRet != null) env.Set(n.Name?.TokenLiteral(), letRet);
+                break;
+
+            // expression
             case IntegerLiteral n:
                 return new MonkeyInteger(n.Value);
             case BooleanExpression n:
                 return NativeBoolToBooleanObject(n.Value);
             case PrefixExpression n:
-                var prefixExpRight = Eval(n.Right);
+                var prefixExpRight = Eval(n.Right, env);
                 if (IsError(prefixExpRight)) return prefixExpRight;
-                return EvalPrefixExpression(n.Token.Literal, prefixExpRight);
+                return EvalPrefixExpression(n.TokenLiteral(), prefixExpRight);
             case InfixExpression n:
-                var left = Eval(n.Left);
+                var left = Eval(n.Left, env);
                 if (IsError(left)) return left;
-                var right = Eval(n.Right);
+                var right = Eval(n.Right, env);
                 if (IsError(right)) return right;
-                return EvalInfixExpression(n.Token.Literal, left, right);
-            case BlockStatement n:
-                var block = EvalBlockStatement(n);
-                return block;
-            case ReturnStatement n:
-                return new MonkeyReturn(Eval(n.Value));
-            case IFExpression ifExpression:
-                return EvalIfExpression(ifExpression);
+                return EvalInfixExpression(n.TokenLiteral(), left, right);
+            case IFExpression n:
+                return EvalIfExpression(n, env);
+            case Identifier n:
+                return EvalIdentifier(n, env);
+
         }
 
         return null;
@@ -41,12 +54,12 @@
         return new MonkeyBoolean(value);
     }
 
-    public IMonkeyObject? EvalProgram(List<IStatement> statements)
+    public IMonkeyObject? EvalProgram(List<IStatement> statements, MonkeyEnvironment env)
     {
         IMonkeyObject? obj = null;
         foreach (var stmt in statements)
         {
-            obj = Eval(stmt);
+            obj = Eval(stmt, env);
             switch (obj)
             {
                 case MonkeyReturn monkeyReturn:
@@ -59,12 +72,12 @@
         return obj;
     }
 
-    public IMonkeyObject? EvalBlockStatement(BlockStatement blockStatement)
+    public IMonkeyObject? EvalBlockStatement(BlockStatement blockStatement, MonkeyEnvironment env)
     {
         IMonkeyObject? obj = null;
         foreach (var stmt in blockStatement.Statements)
         {
-            obj = Eval(stmt);
+            obj = Eval(stmt, env);
             if (obj != null)
             {
                 if (obj.GetMonkeyObjectType() == MonkeyObjectType.Return && obj.GetMonkeyObjectType() == MonkeyObjectType.Error)
@@ -183,20 +196,20 @@
         }
     }
 
-    public IMonkeyObject? EvalIfExpression(IFExpression expression)
+    public IMonkeyObject? EvalIfExpression(IFExpression expression, MonkeyEnvironment env)
     {
-        var condiion = Eval(expression.Condition);
-        //if (IsError(condiion))
-        //{
-        //    return condiion;
-        //}
+        var condiion = Eval(expression.Condition, env);
+        if (IsError(condiion))
+        {
+            return condiion;
+        }
         if (IsTruthy(condiion))
         {
-            return Eval(expression.Consequence);
+            return Eval(expression.Consequence, env);
         }
         else if (expression.Alternative != null)
         {
-            return Eval(expression.Alternative);
+            return Eval(expression.Alternative, env);
         }
         else
         {
@@ -229,4 +242,15 @@
         return true;
     }
 
+    public IMonkeyObject? EvalIdentifier(Identifier node, MonkeyEnvironment env)
+    {
+        (IMonkeyObject? obj, bool ok) = env.Get(node.TokenLiteral());
+        if (!ok)
+        {
+            return NewError("identifier not found: " + node.TokenLiteral());
+        }
+
+        return obj;
+    }
+    
 }

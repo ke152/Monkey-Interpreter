@@ -207,14 +207,14 @@ internal class Parser
 	#region parse expression
 
 	public readonly Dictionary<TokenType, Func<IExpression?>> PrefixParseFns = new();
-	public readonly Dictionary<TokenType, Func<IExpression, IExpression>> InfixParseFns = new();
+	public readonly Dictionary<TokenType, Func<IExpression?, IExpression>> InfixParseFns = new();
 
 	public void RegisterPrefix(TokenType token, Func<IExpression?> fn)
 	{
 		PrefixParseFns[token] = fn;
 	}
 
-	public void Registerinfix(TokenType token, Func<IExpression, IExpression> fn)
+	public void Registerinfix(TokenType token, Func<IExpression?, IExpression> fn)
 	{
 		InfixParseFns[token] = fn;
 	}
@@ -228,7 +228,7 @@ internal class Parser
 
 	}
 
-	public IExpression ParseInfixExpression(IExpression expression)
+	public IExpression ParseInfixExpression(IExpression? expression)
 	{
 		var exp = new InfixExpression() { Token = CurToken, Operator = CurToken.Literal, Left = expression };
 
@@ -386,7 +386,7 @@ internal class Parser
 		return list;
 	}
 
-	public IExpression ParseCallExpression(IExpression func)
+	public IExpression ParseCallExpression(IExpression? func)
 	{
 		return new CallExpression(CurToken, func, ParseCallArguments());
 	}
