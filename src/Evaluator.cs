@@ -15,12 +15,15 @@
             case BooleanExpression n:
                 return NativeBoolToBooleanObject(n.Value);
             case PrefixExpression n:
-                var obj = Eval(n);
-                return EvalPrefixExpression(n.Operator, obj);
+                var prefixExpRight = Eval(n.Right);
+                if (IsError(prefixExpRight)) return prefixExpRight;
+                return EvalPrefixExpression(n.Token.Literal, prefixExpRight);
             case InfixExpression n:
                 var left = Eval(n.Left);
+                if (IsError(left)) return left;
                 var right = Eval(n.Right);
-                return EvalInfixExpression(n.Operator, left, right);
+                if (IsError(right)) return right;
+                return EvalInfixExpression(n.Token.Literal, left, right);
             case BlockStatement n:
                 var block = EvalBlockStatement(n);
                 return block;
@@ -48,8 +51,8 @@
             {
                 case MonkeyReturn monkeyReturn:
                     return monkeyReturn.Value;
-                //case MonkeyError monkeyError:
-                //    return monkeyError;
+                case MonkeyError monkeyError:
+                    return monkeyError;
             }
 
         }
@@ -62,12 +65,15 @@
         foreach (var stmt in blockStatement.Statements)
         {
             obj = Eval(stmt);
-            if (obj != null && obj.GetMonkeyObjectType() == MonkeyObjectType.Return)
+            if (obj != null)
             {
-                return obj;
+                if (obj.GetMonkeyObjectType() == MonkeyObjectType.Return && obj.GetMonkeyObjectType() == MonkeyObjectType.Error)
+                {
+                    return obj;
+                }
             }
         }
-
+        
         return obj;
     }
   
@@ -82,7 +88,7 @@
             case "-":
                 return EvalMinusPrefiOperatorExpression(right);
             default:
-                return new MonkeyNull();
+                return NewError("unknown operator:", op, right.GetMonkeyObjectType().ToString());
         }
     }
 
@@ -103,7 +109,7 @@
     {
         if (right.GetMonkeyObjectType() != MonkeyObjectType.Integer)
         {
-            return new MonkeyNull();
+            return NewError("unknown operator:", right.GetMonkeyObjectType().ToString());
         }
 
         var r = right as MonkeyInteger;
@@ -119,7 +125,12 @@
     {
         if (left == null || right == null)
         {
-            return new MonkeyNull();
+            return NewError("MonkeyObject is null:");
+        }
+
+        if (left.GetMonkeyObjectType() != right.GetMonkeyObjectType())
+        {
+            return NewError("type mismatch:", left.GetMonkeyObjectType().ToString(), op, right.GetMonkeyObjectType().ToString());
         }
 
         if (left.GetMonkeyObjectType() == MonkeyObjectType.Integer && right.GetMonkeyObjectType() == MonkeyObjectType.Integer)
@@ -142,9 +153,10 @@
     {
         var rv = right as MonkeyInteger;
         var lv = left as MonkeyInteger;
+
         if (lv == null || rv == null)
         {
-            return new MonkeyNull();
+            return NewError("MonkeyObject is not MonkeyInteger:", left.GetMonkeyObjectType().ToString(), right.GetMonkeyObjectType().ToString());
         }
 
         switch (op)
@@ -166,7 +178,7 @@
             case "!=":
                 return NativeBoolToBooleanObject(lv.Value != rv.Value);
             default:
-                return new MonkeyNull();
+                return NewError("unknown operator:", left.GetMonkeyObjectType().ToString(), op, right.GetMonkeyObjectType().ToString());
 
         }
     }
@@ -204,4 +216,17 @@
                 return false;//默认不是应该false吗？书上是true
         }
     }
+
+    public MonkeyError NewError(params string[] msg)
+    {
+        return new MonkeyError(string.Join(" ", msg));
+    }
+
+    public bool IsError(IMonkeyObject? obj)
+    {
+        if (obj == null) return false;
+        if (obj.GetMonkeyObjectType() != MonkeyObjectType.Error) return false;
+        return true;
+    }
+
 }

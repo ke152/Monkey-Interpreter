@@ -10,6 +10,7 @@ internal enum MonkeyObjectType
     Boolean,
     Null,
     Return,
+    Error,
 }
 
 internal class MonkeyInteger : IMonkeyObject
@@ -74,6 +75,24 @@ internal class MonkeyReturn : IMonkeyObject
 
     public string Inspect()
     {
+        if (Value == null) return string.Empty;
         return Value.Inspect();
+    }
+}
+
+class MonkeyError : IMonkeyObject
+{
+    public MonkeyObjectType Type = MonkeyObjectType.Error;
+    public MonkeyObjectType GetMonkeyObjectType() => Type;
+
+    public string Message;
+
+    public MonkeyError(string m)
+    {
+        this.Message = m;
+    }
+    public string Inspect()
+    {
+        return "error: " + Message;
     }
 }
