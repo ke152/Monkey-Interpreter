@@ -423,3 +423,29 @@ class IndexExpression : IExpression
         return Token.Literal;
     }
 }
+
+class HashLiteral : IExpression
+{
+    public Token Token;//'{'词法单元
+    public Dictionary<IExpression, IExpression?> Pairs = new();
+
+    public HashLiteral(Token token)
+    {
+        this.Token = token;
+    }
+
+    public string String()
+    {
+        var str = new List<string>();
+        foreach (var item in Pairs.Values)
+        {
+            str.Add(item.String());
+        }
+        return $"{{{string.Join(",", str)}}}";
+    }
+
+    public string TokenLiteral()
+    {
+        return Token.Literal;
+    }
+}

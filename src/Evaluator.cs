@@ -77,6 +77,9 @@
                 }
 
                 return EvalIndexExpression(left, index);
+
+            case HashLiteral hashLiteral:
+                return EvalHashLiteral(hashLiteral, env);
         }
 
         return null;
@@ -371,14 +374,15 @@
         return new MonkeyString(lv.Value + rv.Value);
     }
 
-    public IMonkeyObject EvalIndexExpression(IMonkeyObject Left, IMonkeyObject index)
+    public IMonkeyObject? EvalIndexExpression(IMonkeyObject? Left, IMonkeyObject? index)
     {
+        if (Left == null || index == null) return NewError("IndexExpression() arguments, Left or index is null");
         switch (Left)
         {
             case IMonkeyObject l when (l.GetMonkeyObjectType() == MonkeyObjectType.Array) && (index.GetMonkeyObjectType() == MonkeyObjectType.Integer):
                 return EvalArrayIndexExpression(Left, index);
-            //case IMonkeyObject monkeyobject when monkeyobject.GetMonkeyObjectType() == MonkeyTypeEnum.Hash_Obj:
-            //    return EvalHashIndexExpreesion(monkeyobject, index);
+            case IMonkeyObject l when l.GetMonkeyObjectType() == MonkeyObjectType.Hash:
+                return EvalHashIndexExpreesion(Left, index);
             default:
                 return NewError("index op not supported", Left.GetMonkeyObjectType().ToString());
         }
@@ -397,5 +401,53 @@
             return new MonkeyNull();
         }
         return array.Elements[idx.Value];
+    }
+
+    public IMonkeyObject EvalHashLiteral(HashLiteral hashLiteral, MonkeyEnvironment env)
+    {
+        var pairs = new Dictionary<HashKey, HashPair>();
+        foreach (var item in hashLiteral.Pairs)
+        {
+            var key = Eval(item.Key, env);
+            if (key == null) continue;
+            if (IsError(key))
+            {
+                return key;
+            }
+            var ok = key is IHashKey;
+            if (!ok)
+            {
+                return NewError("unusable as hash key: ", key.GetMonkeyObjectType().ToString());
+            }
+            var val = Eval(item.Value, env);
+            if (val == null) continue;
+            if (IsError(val))
+            {
+                return val;
+            }
+            var hashkey = key as IHashKey;
+            if (hashkey == null) continue;
+
+            pairs.Add(hashkey.HashKey(), new HashPair() { Key = key, Value = val });
+        }
+        return new MonkeyHash() { Pairs = pairs };
+    }
+
+    public IMonkeyObject? EvalHashIndexExpreesion(IMonkeyObject Hash, IMonkeyObject Index)
+    {
+        var hashobject = Hash as MonkeyHash;
+        if (hashobject == null) return null;
+        var ok = Index is IHashKey;
+        if (!ok)
+        {
+            return NewError("unusable as hash key: ", Index.GetMonkeyObjectType().ToString());
+        }
+        var key = (Index as IHashKey);
+        if (key == null) return null;
+        if (hashobject.Pairs.TryGetValue(key.HashKey(), out HashPair hashPair))
+        {
+            return hashPair.Value;
+        }
+        return null;
     }
 }

@@ -51,6 +51,7 @@ internal class Parser
 		RegisterPrefix(TokenType.FUNCTION, this.ParseFunctionLiteral);
 		RegisterPrefix(TokenType.STRING, this.ParseStringLiteral);
 		RegisterPrefix(TokenType.LBRACKET, ParseArrayLiteral);
+		RegisterPrefix(TokenType.LBRACE, ParseHashLiteral);
 
 		Registerinfix(TokenType.PLUS, ParseInfixExpression);
 		Registerinfix(TokenType.MINUS, ParseInfixExpression);
@@ -166,14 +167,14 @@ internal class Parser
 		if (!ExpectPeek(TokenType.IDENT))
 		{
 			//CurError(stmt);
-			//PeekError(TokenEnum.IDENT);
+			//PeekError(TokenType.IDENT);
 			return null;
 		}
 		stmt.Name = new Identifier() { Token = CurToken, Value = CurToken.Literal };
 		if (!ExpectPeek(TokenType.ASSIGN))
 		{
 			//CurError(stmt);
-			//PeekError(TokenEnum.ASSIGN);
+			//PeekError(TokenType.ASSIGN);
 			return null;
 		}
 		NextToken();
@@ -467,6 +468,31 @@ internal class Parser
 			return null;
 		}
 		return exp;
+	}
+
+	public IExpression? ParseHashLiteral()
+	{
+		var hash = new HashLiteral(CurToken);
+		while (!PeekTokenIs(TokenType.RBRACE))
+		{
+			NextToken();
+			var key = ParseExpression();
+			if (!ExpectPeek(TokenType.COLON))
+			{
+				return null;
+			}
+			NextToken();
+			hash.Pairs[key] = ParseExpression();
+			if (!PeekTokenIs(TokenType.RBRACE) && !ExpectPeek(TokenType.COMMA))
+			{
+				return null;
+			}
+		}
+		if (!ExpectPeek(TokenType.RBRACE))
+		{
+			return null;
+		}
+		return hash;
 	}
 	#endregion
 }

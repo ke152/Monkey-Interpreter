@@ -4,6 +4,17 @@
     MonkeyObjectType GetMonkeyObjectType();
 }
 
+internal interface IHashKey
+{
+    public HashKey HashKey();
+}
+
+internal struct HashKey
+{
+    internal MonkeyObjectType Type;
+    internal Int64 Value;
+}
+
 internal enum MonkeyObjectType
 {
     Integer,
@@ -15,9 +26,10 @@ internal enum MonkeyObjectType
     String,
     Builtin,
     Array,
+    Hash,
 }
 
-internal class MonkeyInteger : IMonkeyObject
+internal class MonkeyInteger : IMonkeyObject, IHashKey
 {
     public MonkeyObjectType Type = MonkeyObjectType.Integer;
 
@@ -30,13 +42,18 @@ internal class MonkeyInteger : IMonkeyObject
 
     public MonkeyObjectType GetMonkeyObjectType() => Type;
 
+    public HashKey HashKey()
+    {
+        return new HashKey { Type = Type, Value = (Int64)Value };
+    }
+
     public string Inspect()
     {
         return Value.ToString();
     }
 }
 
-internal class MonkeyBoolean : IMonkeyObject
+internal class MonkeyBoolean : IMonkeyObject, IHashKey
 {
     public MonkeyObjectType Type = MonkeyObjectType.Boolean;
 
@@ -51,6 +68,11 @@ internal class MonkeyBoolean : IMonkeyObject
     public string Inspect()
     {
         return Value.ToString();
+    }
+
+    public HashKey HashKey()
+    {
+        return new HashKey { Type = Type, Value = Value ? 1 : 0 };
     }
 }
 
@@ -170,7 +192,7 @@ class MonkeyFunction : IMonkeyObject
     }
 }
 
-internal class MonkeyString : IMonkeyObject
+internal class MonkeyString : IMonkeyObject, IHashKey
 {
     public MonkeyObjectType Type = MonkeyObjectType.String;
     public MonkeyObjectType GetMonkeyObjectType() => Type;
@@ -186,6 +208,11 @@ internal class MonkeyString : IMonkeyObject
     public string Inspect()
     {
         return Value;
+    }
+
+    public HashKey HashKey()
+    {
+        return new HashKey { Type = Type, Value = Value.GetHashCode() };
     }
 }
 
@@ -225,5 +252,28 @@ class MonkeyArray : IMonkeyObject
     public string Inspect()
     {
         return $"[{string.Join(',', Elements.Select((e)=>e?.Inspect()))}]";
+    }
+}
+
+internal struct HashPair
+{
+    public IMonkeyObject Key;
+    public IMonkeyObject? Value;
+}
+
+internal class MonkeyHash : IMonkeyObject
+{
+    public MonkeyObjectType Type = MonkeyObjectType.Hash;
+    public MonkeyObjectType GetMonkeyObjectType() => Type;
+
+    public Dictionary<HashKey, HashPair> Pairs = new();
+    public string Inspect()
+    {
+        var str = new List<string>();
+        foreach (var item in Pairs)
+        {
+            str.Add($"{item.Value.Key.Inspect()}:{item.Value.Value?.Inspect()}");
+        }
+        return $"{{{string.Join(",", str)}}}";
     }
 }

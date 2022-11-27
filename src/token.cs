@@ -67,7 +67,7 @@ enum TokenType
     RBRACE,//右花括号
     LT, // <
     GT,// >
-    COLON,
+    COLON,//:
     LBRACKET,//左中括号
     RBRACKET,//右中括号
     EQ, // ==
