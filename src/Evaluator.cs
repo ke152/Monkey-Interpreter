@@ -57,7 +57,26 @@
                 return ApplyFunction(func, args);
             case StringLiteral n:
                 return new MonkeyString(n.Value);
+            case ArrayLiteral arrayLiteral:
+                var eles = EvalExpressions(arrayLiteral.Element, env);
+                if (eles.Count == 1 && IsError(eles[0]))
+                {
+                    return eles[0];
+                }
+                return new MonkeyArray(eles);
+            case IndexExpression indexExpression:
+                left = Eval(indexExpression.Left, env);
+                if (IsError(left))
+                {
+                    return left;
+                }
+                var index = Eval(indexExpression.Index, env);
+                if (IsError(index))
+                {
+                    return index;
+                }
 
+                return EvalIndexExpression(left, index);
         }
 
         return null;
@@ -350,5 +369,33 @@
         }
 
         return new MonkeyString(lv.Value + rv.Value);
+    }
+
+    public IMonkeyObject EvalIndexExpression(IMonkeyObject Left, IMonkeyObject index)
+    {
+        switch (Left)
+        {
+            case IMonkeyObject l when (l.GetMonkeyObjectType() == MonkeyObjectType.Array) && (index.GetMonkeyObjectType() == MonkeyObjectType.Integer):
+                return EvalArrayIndexExpression(Left, index);
+            //case IMonkeyObject monkeyobject when monkeyobject.GetMonkeyObjectType() == MonkeyTypeEnum.Hash_Obj:
+            //    return EvalHashIndexExpreesion(monkeyobject, index);
+            default:
+                return NewError("index op not supported", Left.GetMonkeyObjectType().ToString());
+        }
+    }
+
+    public IMonkeyObject? EvalArrayIndexExpression(IMonkeyObject Left, IMonkeyObject index)
+    {
+        var array = Left as MonkeyArray;
+        var idx = index as MonkeyInteger;
+
+        if (array == null || idx == null) return new MonkeyNull();
+
+        var max = array.Elements.Count - 1;
+        if (idx.Value < 0 || idx.Value > max)
+        {
+            return new MonkeyNull();
+        }
+        return array.Elements[idx.Value];
     }
 }

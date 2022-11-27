@@ -8,19 +8,21 @@ internal class Precedence
 	public const int PRODUCT = 5;     // * /
 	public const int PREFIX = 6;      // -X or !X
 	public const int CALL = 7;       // myFunction(X)
+	public const int INDEX = 8;       // myArray[0]
 
 	public static readonly Dictionary<TokenType, int> TypeDict = new()
-		{
-			{ TokenType.EQ, Precedence.EQUALS },
-			{ TokenType.NOT_EQ, Precedence.EQUALS },
-			{ TokenType.LT, Precedence.LESSGREATER },
-			{ TokenType.GT, Precedence.LESSGREATER },
-			{ TokenType.PLUS, Precedence.SUM },
-			{ TokenType.MINUS, Precedence.SUM },
-			{ TokenType.SLASH, Precedence.PRODUCT },
-			{ TokenType.ASTERISK, Precedence.PRODUCT },
-			{ TokenType.FUNCTION, Precedence.CALL },
-			{ TokenType.LPAREN, Precedence.CALL },
+	{
+		{ TokenType.EQ, Precedence.EQUALS },
+		{ TokenType.NOT_EQ, Precedence.EQUALS },
+		{ TokenType.LT, Precedence.LESSGREATER },
+		{ TokenType.GT, Precedence.LESSGREATER },
+		{ TokenType.PLUS, Precedence.SUM },
+		{ TokenType.MINUS, Precedence.SUM },
+		{ TokenType.SLASH, Precedence.PRODUCT },
+		{ TokenType.ASTERISK, Precedence.PRODUCT },
+		{ TokenType.FUNCTION, Precedence.CALL },
+		{ TokenType.LPAREN, Precedence.CALL },
+		{ TokenType.LBRACKET, Precedence.INDEX },
 	};
 }
 #endregion
@@ -48,6 +50,7 @@ internal class Parser
 		RegisterPrefix(TokenType.IF, this.ParseIFExpression);
 		RegisterPrefix(TokenType.FUNCTION, this.ParseFunctionLiteral);
 		RegisterPrefix(TokenType.STRING, this.ParseStringLiteral);
+		RegisterPrefix(TokenType.LBRACKET, ParseArrayLiteral);
 
 		Registerinfix(TokenType.PLUS, ParseInfixExpression);
 		Registerinfix(TokenType.MINUS, ParseInfixExpression);
@@ -58,6 +61,7 @@ internal class Parser
 		Registerinfix(TokenType.LT, ParseInfixExpression);
 		Registerinfix(TokenType.GT, ParseInfixExpression);
 		Registerinfix(TokenType.LPAREN, ParseCallExpression);
+		Registerinfix(TokenType.LBRACKET, ParseIndexExpression);
 
 		NextToken();
 		NextToken();
@@ -195,7 +199,7 @@ internal class Parser
 
 	public ExpressionStatement ParseExpressionStatement()
 	{
-		ExpressionStatement stmt = new ExpressionStatement() { Token = CurToken };
+		ExpressionStatement stmt = new() { Token = CurToken };
 		stmt.Expression = ParseExpression();
 		if (PeekTokenIs(TokenType.SEMICOLON))
 		{
@@ -209,14 +213,14 @@ internal class Parser
 	#region parse expression
 
 	public readonly Dictionary<TokenType, Func<IExpression?>> PrefixParseFns = new();
-	public readonly Dictionary<TokenType, Func<IExpression?, IExpression>> InfixParseFns = new();
+	public readonly Dictionary<TokenType, Func<IExpression?, IExpression?>> InfixParseFns = new();
 
 	public void RegisterPrefix(TokenType token, Func<IExpression?> fn)
 	{
 		PrefixParseFns[token] = fn;
 	}
 
-	public void Registerinfix(TokenType token, Func<IExpression?, IExpression> fn)
+	public void Registerinfix(TokenType token, Func<IExpression?, IExpression?> fn)
 	{
 		InfixParseFns[token] = fn;
 	}
@@ -390,7 +394,7 @@ internal class Parser
 
 	public IExpression ParseCallExpression(IExpression? func)
 	{
-		return new CallExpression(CurToken, func, ParseCallArguments());
+		return new CallExpression(CurToken, func, ParseExpressionList(TokenType.RPAREN));
 	}
 
 	public List<IExpression?>? ParseCallArguments()
@@ -419,6 +423,50 @@ internal class Parser
 	public IExpression ParseStringLiteral()
 	{
 		return new StringLiteral(CurToken, CurToken.Literal);
+	}
+
+	public IExpression ParseArrayLiteral()
+	{
+        var array = new ArrayLiteral(CurToken)
+        {
+            Element = ParseExpressionList(TokenType.RBRACKET)
+        };
+        return array;
+	}
+
+	public List<IExpression?>? ParseExpressionList(TokenType end)
+	{
+		var list = new List<IExpression?>();
+		if (PeekTokenIs(end))
+		{
+			NextToken();
+			return list;
+		}
+		NextToken();
+		list.Add(ParseExpression());
+		while (PeekTokenIs(TokenType.COMMA))
+		{
+			NextToken();
+			NextToken();
+			list.Add(ParseExpression());
+		}
+		if (!ExpectPeek(end))
+		{
+			return null;
+		}
+		return list;
+	}
+
+	public IExpression? ParseIndexExpression(IExpression? left)
+	{
+		var exp = new IndexExpression(CurToken, left);
+		NextToken();
+		exp.Index = ParseExpression();
+		if (!ExpectPeek(TokenType.RBRACKET))
+		{
+			return null;
+		}
+		return exp;
 	}
 	#endregion
 }

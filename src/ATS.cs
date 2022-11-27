@@ -371,3 +371,55 @@ internal class StringLiteral : IExpression
     }
 }
 
+class ArrayLiteral : IExpression
+{
+    public Token Token;
+    public List<IExpression?>? Element;
+
+    public ArrayLiteral(Token token)
+    {
+        this.Token = token;
+    }
+
+    public string String()
+    {
+        var ele = new List<string?>();
+        if (Element != null)
+        {
+            foreach (var item in Element)
+            {
+                ele.Add(item?.String());
+            }
+        }
+        return $"[{string.Join(",", ele)}]";
+    }
+
+    public string TokenLiteral()
+    {
+        return Token.Literal;
+    }
+}
+
+class IndexExpression : IExpression
+{
+    public Token Token;
+    public IExpression? Left;
+
+    public IExpression? Index;
+
+    public IndexExpression(Token token, IExpression? left)
+    {
+        this.Token= token;
+        this.Left = left;
+    }
+
+    public string String()
+    {
+        return $"({Left?.String()}[{Index?.String()}])";
+    }
+
+    public string TokenLiteral()
+    {
+        return Token.Literal;
+    }
+}

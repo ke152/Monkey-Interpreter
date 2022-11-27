@@ -68,8 +68,8 @@ enum TokenType
     LT, // <
     GT,// >
     COLON,
-    LBRACKET,
-    RBRACKET,
+    LBRACKET,//左中括号
+    RBRACKET,//右中括号
     EQ, // ==
     NOT_EQ, // !=
     STRING, // "

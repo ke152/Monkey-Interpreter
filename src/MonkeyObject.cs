@@ -14,6 +14,7 @@ internal enum MonkeyObjectType
     Function,
     String,
     Builtin,
+    Array,
 }
 
 internal class MonkeyInteger : IMonkeyObject
@@ -188,13 +189,12 @@ internal class MonkeyString : IMonkeyObject
     }
 }
 
-
 class MonkeyBuiltin : IMonkeyObject
 {
     public MonkeyObjectType Type = MonkeyObjectType.Builtin;
     public MonkeyObjectType GetMonkeyObjectType() => Type;
 
-    public delegate IMonkeyObject BuiltinFunction(List<IMonkeyObject?>? args);
+    public delegate IMonkeyObject? BuiltinFunction(List<IMonkeyObject?>? args);
 
     public BuiltinFunction? Fn;
 
@@ -206,5 +206,24 @@ class MonkeyBuiltin : IMonkeyObject
     public string Inspect()
     {
         return "builtin function";
+    }
+}
+
+class MonkeyArray : IMonkeyObject
+{
+    public MonkeyObjectType Type = MonkeyObjectType.Array;
+    public MonkeyObjectType GetMonkeyObjectType() => Type;
+
+    public List<IMonkeyObject?> Elements;
+
+    public MonkeyArray(List<IMonkeyObject?>? elements = null)
+    {
+        if (elements == null) this.Elements = new();
+        else this.Elements = elements;
+    }
+
+    public string Inspect()
+    {
+        return $"[{string.Join(',', Elements.Select((e)=>e?.Inspect()))}]";
     }
 }
