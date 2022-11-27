@@ -7,6 +7,7 @@
         { "last", new MonkeyBuiltin(BuiltinFunctionLast) },
         { "rest", new MonkeyBuiltin(BuiltinFunctionRest) },
         { "push", new MonkeyBuiltin(BuiltinFunctionPush) },
+        { "puts", new MonkeyBuiltin(BuiltinFunctionPuts) },
     };
 
     public static IMonkeyObject? BuiltinFunctionLen(List<IMonkeyObject?>? args)
@@ -85,5 +86,18 @@
             default:
                 return Evaluator.NewError($"argument to 'push' must be array, got={args[0]?.GetMonkeyObjectType()}");
         };
+    }
+
+    public static IMonkeyObject? BuiltinFunctionPuts(List<IMonkeyObject?>? args)
+    {
+        if (args == null) return Evaluator.NewError("null arguments");
+        if (args.Count != 1) return Evaluator.NewError($"wrong number of arguments. got={args.Count}, want=1");
+
+        foreach (var item in args)
+        {
+            Console.WriteLine(item?.Inspect());
+        }
+
+        return new MonkeyNull();
     }
 }
