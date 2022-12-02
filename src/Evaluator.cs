@@ -48,6 +48,10 @@
                 var body = n.Body;
                 return new MonkeyFunction() { Body = body, Parameter = param, Env = env };
             case CallExpression callExpression:
+                if (callExpression.Function?.TokenLiteral() == "quote")
+                {
+                    return new MonkeyQuote(callExpression.Arguments?[0]);
+                }
                 var func = Eval(callExpression.Function, env);
                 if (IsError(func))
                     return func;

@@ -27,6 +27,7 @@ internal enum MonkeyObjectType
     Builtin,
     Array,
     Hash,
+    Quote,
 }
 
 internal class MonkeyInteger : IMonkeyObject, IHashKey
@@ -275,5 +276,23 @@ internal class MonkeyHash : IMonkeyObject
             str.Add($"{item.Value.Key.Inspect()}:{item.Value.Value?.Inspect()}");
         }
         return $"{{{string.Join(",", str)}}}";
+    }
+}
+
+internal class MonkeyQuote : IMonkeyObject
+{
+    public MonkeyObjectType Type = MonkeyObjectType.Quote;
+    public MonkeyObjectType GetMonkeyObjectType() => Type;
+
+    public INode? Node;
+
+    public MonkeyQuote(IExpression? expression)
+    {
+        this.Node = expression;
+    }
+
+    public string Inspect()
+    {
+        return $"Quote({Node?.String()})";
     }
 }
