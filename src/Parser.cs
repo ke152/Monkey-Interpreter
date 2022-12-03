@@ -68,9 +68,9 @@ internal class Parser
 		NextToken();
 	}
 
-	public AtsProgram ParseProgram()
+	public AstProgram ParseProgram()
 	{
-		AtsProgram program = new();
+		AstProgram program = new();
 
 		while (!CurTokenIs(TokenType.EOF))
 		{
@@ -190,7 +190,7 @@ internal class Parser
 	{
 		var stmt = new ReturnStatement() { Token = CurToken };
 		NextToken();
-        stmt.Value = ParseExpression();
+        stmt.ReturnValue = ParseExpression();
         if (PeekTokenIs(TokenType.SEMICOLON))
         {
             NextToken();
@@ -287,7 +287,7 @@ internal class Parser
 			return null;
 		}
 
-		var exp = new IFExpression(CurToken);
+		var exp = new IfExpression(CurToken);
 		NextToken();
 		exp.Condition = ParseExpression();
 		if (!ExpectPeek(TokenType.RPAREN))

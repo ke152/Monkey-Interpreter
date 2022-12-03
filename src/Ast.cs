@@ -1,4 +1,6 @@
-﻿interface INode
+﻿
+
+interface INode
 {
     string TokenLiteral();
     string String();
@@ -60,11 +62,11 @@ class LetStatement : IStatement
 class ReturnStatement : IStatement
 {
     public Token Token = new();
-    public IExpression? Value { get; set; }
+    public IExpression? ReturnValue { get; set; }
 
     public string String()
     {
-        string str = $"{TokenLiteral()}  ={Value?.String()};";
+        string str = $"{TokenLiteral()}  ={ReturnValue?.String()};";
         return str;
     }
 
@@ -101,9 +103,9 @@ class ExpressionStatement : IStatement
     }
 }
 
-internal class AtsProgram : INode
+internal class AstProgram : INode
 {
-    public AtsProgram()
+    public AstProgram()
     {
         Statements = new List<IStatement>();
     }
@@ -207,14 +209,14 @@ class BlockStatement : IStatement
     }
 }
 
-class IFExpression : IExpression
+class IfExpression : IExpression
 {
     public Token Token;
     public IExpression? Condition;
     public BlockStatement? Consequence;
     public BlockStatement? Alternative;
 
-    public IFExpression(Token token)
+    public IfExpression(Token token)
     {
         this.Token = token;
     }
@@ -278,7 +280,7 @@ class InfixExpression : IExpression
 class FunctionLiteral : IExpression
 {
     public Token Token;
-    public List<Identifier>? Parameter;
+    public List<Identifier> Parameter = new();
 
     public BlockStatement? Body;
 
@@ -374,7 +376,7 @@ internal class StringLiteral : IExpression
 class ArrayLiteral : IExpression
 {
     public Token Token;
-    public List<IExpression?>? Element;
+    public List<IExpression?> Element = new();
 
     public ArrayLiteral(Token token)
     {
@@ -447,5 +449,82 @@ class HashLiteral : IExpression
     public string TokenLiteral()
     {
         return Token.Literal;
+    }
+}
+
+
+internal class AstModify
+{
+    public delegate INode ModifierFunc(INode? node);
+
+    public static INode Modify(INode? node, ModifierFunc modifier)
+    {
+        switch (node)
+        {
+            case AstProgram e:
+                for (int i = 0; i < e.Statements.Count; i++)
+                {
+                    e.Statements[i] = (IStatement)Modify(e.Statements[i], modifier);
+                }
+                break;
+            case ExpressionStatement e:
+                e.Expression = (IExpression)Modify(e.Expression, modifier);
+                break;
+            case InfixExpression e:
+                e.Left = (InfixExpression)Modify(e.Left, modifier);
+                e.Right = (InfixExpression)Modify(e.Right, modifier);
+                break;
+            case PrefixExpression e:
+                e.Right = (PrefixExpression)Modify(e.Right, modifier);
+                break;
+            case IndexExpression e:
+                e.Left = (IndexExpression)Modify(e.Left, modifier);
+                e.Index = (IndexExpression)Modify(e.Index, modifier);
+                break;
+            case IfExpression e:
+                e.Condition = (IExpression)Modify(e.Condition, modifier);
+                e.Consequence = (BlockStatement)Modify(e.Consequence, modifier);
+                if (e.Alternative != null)
+                {
+                    e.Alternative = (BlockStatement)Modify(e.Alternative, modifier);
+                }
+                break;
+            case BlockStatement e:
+                for (int i = 0; i < e.Statements.Count; i++)
+                {
+                    e.Statements[i] = (IStatement)Modify(e.Statements[i], modifier);
+                }
+                break;
+            case ReturnStatement e:
+                e.ReturnValue = (IExpression)Modify(e.ReturnValue, modifier);
+                break;
+            case LetStatement e:
+                e.Value = (IExpression)Modify(e.Value, modifier);
+                break;
+            case FunctionLiteral e:
+                for (int i = 0; i < e.Parameter.Count; i++)
+                {
+                    e.Parameter[i] = (Identifier)Modify(e.Parameter[i], modifier);
+                }
+                e.Body = (BlockStatement)Modify(e.Body, modifier);
+                break;
+            case ArrayLiteral e:
+                for (int i = 0; i < e.Element.Count; i++)
+                {
+                    e.Element[i] = (IExpression?)Modify(e.Element[i], modifier);
+                }
+                break;
+            case HashLiteral e:
+                var newPairs = new Dictionary<IExpression, IExpression?>();
+                foreach (var pair in e.Pairs)
+                {
+                    var newKey = (IExpression)Modify(pair.Key, modifier);
+                    var newVal = (IExpression?)Modify(pair.Value, modifier);
+                    newPairs.Add(newKey, newVal);
+                }
+                break;
+        }
+
+        return modifier(node);
     }
 }

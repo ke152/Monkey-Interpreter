@@ -7,7 +7,7 @@
         switch (node)
         {
             // statements
-            case AtsProgram n:
+            case AstProgram n:
                 return EvalProgram(n.Statements, env);
             case BlockStatement n:
                 var block = EvalBlockStatement(n, env);
@@ -15,7 +15,7 @@
             case ExpressionStatement n:
                 return Eval(n.Expression, env);
             case ReturnStatement n:
-                var ret = Eval(n.Value, env);
+                var ret = Eval(n.ReturnValue, env);
                 if (IsError(ret)) return ret;
                 return new MonkeyReturn(ret);
             case LetStatement n:
@@ -39,7 +39,7 @@
                 var right = Eval(n.Right, env);
                 if (IsError(right)) return right;
                 return EvalInfixExpression(n.TokenLiteral(), left, right);
-            case IFExpression n:
+            case IfExpression n:
                 return EvalIfExpression(n, env);
             case Identifier n:
                 return EvalIdentifier(n, env);
@@ -241,7 +241,7 @@
         }
     }
 
-    public IMonkeyObject? EvalIfExpression(IFExpression expression, MonkeyEnvironment env)
+    public IMonkeyObject? EvalIfExpression(IfExpression expression, MonkeyEnvironment env)
     {
         var condiion = Eval(expression.Condition, env);
         if (IsError(condiion))
