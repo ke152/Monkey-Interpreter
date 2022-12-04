@@ -275,6 +275,7 @@ class InfixExpression : IExpression
         return ret ?? string.Empty;
     }
 }
+
 class FunctionLiteral : IExpression
 {
     public Token Token;
@@ -525,4 +526,41 @@ internal class AstModify
 
         return modifier(node);
     }
+}
+
+class MacroLiteral : IExpression
+{
+    public Token Token;//macro词法单元
+    public List<Identifier> Parameter = new();
+
+    public BlockStatement? Body;
+
+    public MacroLiteral(Token token)
+    {
+        this.Token = token;
+    }
+
+    public string String()
+    {
+        string str = string.Empty;
+        string param = string.Empty;
+
+        if (Parameter != null)
+        {
+            foreach (var item in Parameter)
+            {
+                param += item?.String();
+            }
+        }
+
+        str += TokenLiteral();
+        str += $"({string.Join(",", param)})\n{{\n{Body?.String()}\n}}\n";
+        return str;
+
+    }
+    public string TokenLiteral()
+    {
+        return Token.Literal;
+    }
+
 }

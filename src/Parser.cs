@@ -52,6 +52,7 @@ internal class Parser
 		RegisterPrefix(TokenType.STRING, this.ParseStringLiteral);
 		RegisterPrefix(TokenType.LBRACKET, ParseArrayLiteral);
 		RegisterPrefix(TokenType.LBRACE, ParseHashLiteral);
+		RegisterPrefix(TokenType.MACRO, ParseMacroLiteral);
 
 		Registerinfix(TokenType.PLUS, ParseInfixExpression);
 		Registerinfix(TokenType.MINUS, ParseInfixExpression);
@@ -367,8 +368,23 @@ internal class Parser
 		exp.Body = ParseBlockStatement();
 		return exp;
 	}
+	public IExpression? ParseMacroLiteral()
+	{
+		var exp = new MacroLiteral(CurToken);
+		if (!ExpectPeek(TokenType.LPAREN))
+		{
+			return null;
+		}
+		exp.Parameter = ParseFunctionParameter();
+		if (!ExpectPeek(TokenType.LBRACE))
+		{
+			return null;
+		}
+		exp.Body = ParseBlockStatement();
+		return exp;
+	}
 
-	public List<Identifier>? ParseFunctionParameter()
+	public List<Identifier> ParseFunctionParameter()
 	{
 		var list = new List<Identifier>();
 		if (PeekTokenIs(TokenType.RPAREN))
@@ -388,7 +404,7 @@ internal class Parser
 		}
 		if (!ExpectPeek(TokenType.RPAREN))
 		{
-			return null;
+			return list;//书中是null
 		}
 		return list;
 	}

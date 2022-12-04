@@ -9,6 +9,7 @@
         { "if", TokenType.IF },
         { "else", TokenType.ELSE },
         { "return", TokenType.RETURN },
+        { "macro", TokenType.MACRO },
     };
 
     public TokenType Type;
@@ -82,4 +83,5 @@ enum TokenType
     ELSE,
     RETURN,
     Unquote,
+    MACRO,
 }

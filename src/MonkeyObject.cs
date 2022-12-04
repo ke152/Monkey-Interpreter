@@ -28,6 +28,7 @@ internal enum MonkeyObjectType
     Array,
     Hash,
     Quote,
+    Macro,
 }
 
 internal class MonkeyInteger : IMonkeyObject, IHashKey
@@ -293,5 +294,33 @@ internal class MonkeyQuote : IMonkeyObject
     public string Inspect()
     {
         return $"Quote({Node?.String()})";
+    }
+}
+
+internal class MonkeyMacro : IMonkeyObject
+{
+    public MonkeyObjectType Type = MonkeyObjectType.Macro;
+    public MonkeyObjectType GetMonkeyObjectType() => Type;
+
+    public List<Identifier> Parameters = new();
+    public BlockStatement? Body;
+    public MonkeyEnvironment Env;
+
+    public MonkeyMacro(List<Identifier> parameter, MonkeyEnvironment env, BlockStatement? body)
+    {
+        this.Parameters = parameter;
+        this.Env = env;
+        this.Body = body;
+    }
+
+    public string Inspect()
+    {
+        string str = string.Empty;
+        foreach (var item in Parameters)
+        {
+            str += item.String();
+        }
+        str += $"fn\r\n({string.Join(", ", str)}){{\n{Body?.String()}\n}}";
+        return str;
     }
 }

@@ -514,4 +514,45 @@
     }
 
     #endregion
+    #region macro
+    public void DefineMacros(AstProgram program, MonkeyEnvironment env)
+    {
+        List<int> definitions = new();
+
+        for (int i = 0; i < program.Statements.Count; i++)
+        {
+            if (IsMacroDefinition(program.Statements[i]))
+            {
+                AddMacro(program.Statements[i], env);
+                definitions.Add(i);
+            }
+        }
+
+        definitions.Reverse();//要从后向前删除
+        foreach (var definitionIndex in definitions)
+        {
+            program.Statements.RemoveAt(definitionIndex);
+        }
+    }
+
+    public bool IsMacroDefinition(IStatement node)
+    {
+        var letStatement = node as LetStatement;
+        if (letStatement == null) return false;
+        if(letStatement.Value is not MacroLiteral) return false;
+        return true;
+    }
+
+    private void AddMacro(IStatement stmt, MonkeyEnvironment env)
+    {
+        var letStatement = stmt as LetStatement;
+        if (letStatement == null) return;
+        var macroLiteral = letStatement.Value as MacroLiteral;
+        if (macroLiteral == null) return;
+
+        var macro = new MonkeyMacro(macroLiteral.Parameter, env, macroLiteral.Body);
+        env.Set(letStatement.Name?.Value, macro);
+    }
+
+    #endregion
 }
