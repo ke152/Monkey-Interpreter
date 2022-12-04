@@ -1,5 +1,6 @@
 ﻿TestLexer();
 TestParser();
+TestUnlessMacro();
 
 REPL();
 
@@ -79,6 +80,22 @@ void TestParser()
     program.PrintStaments();
 }
 
+void TestUnlessMacro()
+{
+    Console.ForegroundColor = ConsoleColor.Red;
+    Console.WriteLine($"TestUnlessMacro:");
+    Console.ResetColor();
+
+    Evaluator eval = new();
+    MonkeyEnvironment env = new();
+    MonkeyEnvironment macroEnv = new();
+
+    string unlessMacro = "let unless = macro(condition, consequence, alternative){ quote( if(!(unquote(condition))) {unquote(consequence);} else {unquote(alternative);} ); };";
+    ParseLine(unlessMacro, eval, env, macroEnv);
+    string unlessUseage = "unless(10>5, puts(\"note greater\"), puts(\"greater\"));";
+    ParseLine(unlessUseage, eval, env, macroEnv);
+}
+
 void REPL()
 {
     //    string MONKEY_FACE = """            __,__
@@ -93,33 +110,39 @@ void REPL()
     //        '._ ' -= -' _.'
     //           '-----'
     //""";
+
     Console.ForegroundColor = ConsoleColor.Red;
     Console.WriteLine($"Hello, {System.Environment.UserName}. This is Monkey programming language.");
     Console.WriteLine($"Feel free to type in commands:");
+    //Console.WriteLine(MONKEY_FACE);
     Console.ResetColor();
 
     Evaluator eval = new();
     MonkeyEnvironment env = new();
     MonkeyEnvironment macroEnv = new();
+
     while (true)
     {
         Console.Write(">>");
         string? line = Console.ReadLine();
         if (line == null) continue;
 
-        var l = new Lexer(" " + line);
-        var p = new Parser(l);
-        var program = p.ParseProgram();
-        program.PrintStaments();
+        ParseLine(line, eval, env, macroEnv);
+    }
+}
 
-        eval.DefineMacros(program, macroEnv);
-        var expanded = eval.ExpandMacros(program, macroEnv);
-        IMonkeyObject? obj = eval.Eval(program, env);
-        if (obj != null)
-        {
-            Console.WriteLine($"evaluator result : {obj.Inspect()}");
-        }
+void ParseLine(string line, Evaluator eval, MonkeyEnvironment env, MonkeyEnvironment macroEnv)
+{
+    var l = new Lexer(" " + line);
+    var p = new Parser(l);
+    var program = p.ParseProgram();
+    program.PrintStaments();
 
-
+    eval.DefineMacros(program, macroEnv);
+    var expanded = eval.ExpandMacros(program, macroEnv);
+    IMonkeyObject? obj = eval.Eval(program, env);
+    if (obj != null)
+    {
+        Console.WriteLine($"evaluator result : {obj.Inspect()}");
     }
 }
