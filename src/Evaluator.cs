@@ -126,10 +126,10 @@
                 }
             }
         }
-        
+
         return obj;
     }
-  
+
     public IMonkeyObject EvalPrefixExpression(string op, IMonkeyObject? right)
     {
         if (right == null) return new MonkeyNull();
@@ -275,7 +275,7 @@
         }
     }
 
-    public static  MonkeyError NewError(params string[] msg)
+    public static MonkeyError NewError(params string[] msg)
     {
         return new MonkeyError(string.Join(" ", msg));
     }
@@ -539,7 +539,7 @@
     {
         var letStatement = node as LetStatement;
         if (letStatement == null) return false;
-        if(letStatement.Value is not MacroLiteral) return false;
+        if (letStatement.Value is not MacroLiteral) return false;
         return true;
     }
 
@@ -554,5 +554,68 @@
         env.Set(letStatement.Name?.Value, macro);
     }
 
+    public INode ExpandMacros(INode program, MonkeyEnvironment env)
+    {
+        AstModify.ModifierFunc modifier = (INode node) => {
+            var callExpression = node as CallExpression;
+            if (callExpression == null) return node;
+
+            var macro = IsMacroCall(callExpression, env);
+            if (macro == null) return node;
+
+            var args = QuoteArgs(callExpression);
+            var evalEnv = ExtendMacroEnv(macro, args);
+            var evaluated = Eval(macro.Body, evalEnv);
+
+            var quote = evaluated as MonkeyQuote;
+            if (quote == null)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("we only support returning AST-nodes from macros");
+                Console.ResetColor();
+                return node;
+            }
+
+            return quote.Node;
+        };
+
+        return AstModify.Modify(program, modifier);
+    }
+
+    private MonkeyMacro? IsMacroCall(CallExpression exp, MonkeyEnvironment env) {
+        var identifier = exp.Function as Identifier;
+        if (identifier == null) return null;
+
+        if (identifier.Value == null) return null;
+        (IMonkeyObject? obj, bool ok) = env.Get(identifier.Value);
+        if (!ok) return null;
+
+        var macro = obj as MonkeyMacro;
+        if (macro == null) return null;
+
+        return macro;
+    }
+
+    private List<MonkeyQuote> QuoteArgs(CallExpression exp) {
+        List<MonkeyQuote> args = new();
+
+        foreach (var a in exp.Arguments) {
+            var node = a as INode;
+            if (node == null) continue;
+            args.Add(new MonkeyQuote(node));
+        }
+
+        return args;
+    }
+
+    private MonkeyEnvironment ExtendMacroEnv(MonkeyMacro macro, List<MonkeyQuote> args) {
+        var extended = MonkeyEnvironment.NewEnclosedEnvironment(macro.Env);
+    
+        for (int i = 0; i < macro.Parameters.Count; i++) {
+            extended.Set(macro.Parameters[i].String(), args[i]);
+        }
+
+        return extended;
+    }
     #endregion
 }
