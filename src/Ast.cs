@@ -1,6 +1,4 @@
-﻿
-
-interface INode
+﻿interface INode
 {
     string TokenLiteral();
     string String();
@@ -317,10 +315,10 @@ class FunctionLiteral : IExpression
 class CallExpression : IExpression
 {
     public Token Token;
-    public IExpression? Function;
-    public List<IExpression?>? Arguments;
+    public IExpression Function;
+    public List<IExpression?> Arguments = new();
 
-    public CallExpression(Token token, IExpression? func, List<IExpression?>? list)
+    public CallExpression(Token token, IExpression func, List<IExpression?> list)
     {
         this.Token = token;
         this.Function = func;
@@ -455,7 +453,7 @@ class HashLiteral : IExpression
 
 internal class AstModify
 {
-    public delegate INode ModifierFunc(INode? node);
+    public delegate INode? ModifierFunc(INode? node);
 
     public static INode Modify(INode? node, ModifierFunc modifier)
     {
@@ -471,15 +469,15 @@ internal class AstModify
                 e.Expression = (IExpression)Modify(e.Expression, modifier);
                 break;
             case InfixExpression e:
-                e.Left = (InfixExpression)Modify(e.Left, modifier);
-                e.Right = (InfixExpression)Modify(e.Right, modifier);
+                e.Left = (IExpression)Modify(e.Left, modifier);
+                e.Right = (IExpression)Modify(e.Right, modifier);
                 break;
             case PrefixExpression e:
-                e.Right = (PrefixExpression)Modify(e.Right, modifier);
+                e.Right = (IExpression)Modify(e.Right, modifier);
                 break;
             case IndexExpression e:
-                e.Left = (IndexExpression)Modify(e.Left, modifier);
-                e.Index = (IndexExpression)Modify(e.Index, modifier);
+                e.Left = (IExpression)Modify(e.Left, modifier);
+                e.Index = (IExpression)Modify(e.Index, modifier);
                 break;
             case IfExpression e:
                 e.Condition = (IExpression)Modify(e.Condition, modifier);
