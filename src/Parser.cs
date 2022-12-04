@@ -435,7 +435,7 @@ internal class Parser
         return array;
 	}
 
-	public List<IExpression?>? ParseExpressionList(TokenType end)
+	public List<IExpression?> ParseExpressionList(TokenType end)
 	{
 		var list = new List<IExpression?>();
 		if (PeekTokenIs(end))
@@ -453,7 +453,7 @@ internal class Parser
 		}
 		if (!ExpectPeek(end))
 		{
-			return null;
+			return list;//书中此处为null
 		}
 		return list;
 	}

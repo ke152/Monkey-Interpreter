@@ -50,7 +50,7 @@
             case CallExpression callExpression:
                 if (callExpression.Function?.TokenLiteral() == "quote")
                 {
-                    return new MonkeyQuote(callExpression.Arguments?[0]);
+                    return Quote(callExpression.Arguments[0], env);
                 }
                 var func = Eval(callExpression.Function, env);
                 if (IsError(func))
@@ -454,4 +454,64 @@
         }
         return null;
     }
+
+    #region quote
+    public IMonkeyObject Quote(INode? node, MonkeyEnvironment env)
+    {
+        node = EvalUnquoteCalls(node, env);
+        if (node == null) return new MonkeyNull();
+        return new MonkeyQuote(node);
+    }
+
+    public INode? EvalUnquoteCalls(INode? quoted, MonkeyEnvironment env)
+    {
+        AstModify.ModifierFunc modifier = (INode? node) =>
+        {
+            if (!IsUnquoteCall(node))
+            {
+                return node;
+            }
+
+            CallExpression? call = node as CallExpression;
+            if (call == null) return node;
+
+            if (call.Arguments.Count != 1)
+            {
+                return node;
+            }
+
+            var unquoted = Eval(call.Arguments[0], env);
+            return ConvertObjectToAstNode(unquoted);
+        };
+        return AstModify.Modify(quoted, modifier);
+    }
+
+    public bool IsUnquoteCall(INode? node)
+    {
+        if (node == null) return false;
+        CallExpression? callExpression = node as CallExpression;
+        if (callExpression == null) return false;
+
+        return callExpression.Function.TokenLiteral() == "unquote";
+    }
+
+    public INode? ConvertObjectToAstNode(IMonkeyObject? obj)
+    {
+        if (obj == null) return null;
+
+        switch (obj)
+        {
+            case MonkeyInteger m:
+                return new IntegerLiteral(new Token(TokenType.INT, m.Value.ToString()));
+            case MonkeyBoolean m:
+                var t = new Token(m.Value == true ? TokenType.TRUE : TokenType.FALSE, m.Value.ToString());
+                return new BooleanExpression(t, m.Value);
+            case MonkeyQuote m:
+                return m.Node;
+            default:
+                return null;
+        }
+    }
+
+    #endregion
 }

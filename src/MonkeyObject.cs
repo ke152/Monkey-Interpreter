@@ -284,11 +284,10 @@ internal class MonkeyQuote : IMonkeyObject
     public MonkeyObjectType Type = MonkeyObjectType.Quote;
     public MonkeyObjectType GetMonkeyObjectType() => Type;
 
-    public INode? Node;
-
-    public MonkeyQuote(IExpression? expression)
+    public INode Node;
+    public MonkeyQuote(INode node)
     {
-        this.Node = expression;
+        Node = node;
     }
 
     public string Inspect()
