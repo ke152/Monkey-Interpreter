@@ -100,6 +100,7 @@ void REPL()
 
     Evaluator eval = new();
     MonkeyEnvironment env = new();
+    MonkeyEnvironment macroEnv = new();
     while (true)
     {
         Console.Write(">>");
@@ -111,10 +112,14 @@ void REPL()
         var program = p.ParseProgram();
         program.PrintStaments();
 
+        eval.DefineMacros(program, macroEnv);
+        var expanded = eval.ExpandMacros(program, macroEnv);
         IMonkeyObject? obj = eval.Eval(program, env);
         if (obj != null)
         {
             Console.WriteLine($"evaluator result : {obj.Inspect()}");
         }
+
+
     }
 }
